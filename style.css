@@ -1,6 +1,6 @@
-@font-face{font-family:Vazirmatn;src:local("Vazirmatn")}
 *{box-sizing:border-box}
-body{margin:0;background:#f5f6f8;color:#20242a;font-family:Vazirmatn,Tahoma,Arial,sans-serif}
+html{font-family:"Vazirmatn",Tahoma,Arial,sans-serif}
+body{margin:0;background:#f5f6f8;color:#20242a;font-family:inherit}
 header{background:#fff;border-bottom:1px solid #ddd;padding:20px max(20px,4vw);display:flex;justify-content:space-between;align-items:center;gap:20px}
 h1,h2,p{margin:0} h1{font-size:25px} header p{color:#777;margin-top:5px;font-size:14px}
 main{max-width:1500px;margin:25px auto;padding:0 18px}
@@ -14,17 +14,17 @@ button:hover{background:#f0f1f3}.primary{background:#1667c9;color:#fff;border-co
 .panel{padding:16px;margin-bottom:16px}.settings{display:flex;gap:18px;align-items:end;flex-wrap:wrap}
 label{font-size:13px;color:#555;display:flex;flex-direction:column;gap:6px;position:relative}
 label small{position:absolute;left:10px;bottom:10px;color:#888}
-input{font:inherit;border:1px solid #cfd3d8;border-radius:7px;padding:8px 10px;background:#fff;min-width:125px}
+input{font:inherit;border:1px solid #cfd3d8;border-radius:7px;padding:8px 10px;background:#fff;min-width:125px;font-variant-numeric:tabular-nums}
 .settings input{min-width:220px}.settings label:nth-child(2) input{padding-left:50px}
 .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 h2{font-size:19px}
 .table-wrap{overflow:auto}
-table{border-collapse:collapse;width:100%;min-width:1050px}
+table{border-collapse:collapse;width:100%;min-width:950px}
 th,td{border-bottom:1px solid #e6e7e9;padding:8px;text-align:center;white-space:nowrap}
 th{background:#fafafa;font-size:13px;color:#555}
 td input{width:100%;min-width:95px}
 td:first-child input{min-width:115px}
-.cost,.live-price,.days,.gregorian{font-variant-numeric:tabular-nums}
+.cost,.live-price,.days{font-variant-numeric:tabular-nums}
 .profit{font-weight:600}
 .delete{border:0;font-size:22px;line-height:1;color:#a22;padding:2px 8px}
 @media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column}.actions{width:100%}}
