@@ -1,12 +1,12 @@
-@font-face{font-family:Vazirmatn;src:local("Vazirmatn")}
+@import url("https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap");
 *{box-sizing:border-box}
-body{margin:0;background:#f5f6f8;color:#20242a;font-family:Vazirmatn,Tahoma,Arial,sans-serif}
+body{margin:0;background:#f5f6f8;color:#20242a;font-family:"Vazirmatn",Tahoma,Arial,sans-serif;font-feature-settings:"ss01"}
 header{background:#fff;border-bottom:1px solid #ddd;padding:20px max(20px,4vw);display:flex;justify-content:space-between;align-items:center;gap:20px}
-h1,h2,p{margin:0} h1{font-size:25px} header p{color:#777;margin-top:5px;font-size:14px}
+h1,h2,p{margin:0} h1{font-size:25px;font-weight:700} header p{color:#777;margin-top:5px;font-size:14px}
 main{max-width:1500px;margin:25px auto;padding:0 18px}
 .actions{display:flex;gap:8px}
 button{font:inherit;border:1px solid #ccc;background:#fff;border-radius:8px;padding:9px 14px;cursor:pointer}
-button:hover{background:#f0f1f3}.primary{background:#1667c9;color:#fff;border-color:#1667c9}.primary:hover{background:#0f58ad}
+button:hover{background:#f0f1f3}.primary{background:#1667c9;color:#fff;border-color:#1667c9;font-weight:600}.primary:hover{background:#0f58ad}
 .danger{color:#b42318}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .card,.panel{background:#fff;border:1px solid #e1e3e6;border-radius:12px}
@@ -19,12 +19,16 @@ input{font:inherit;border:1px solid #cfd3d8;border-radius:7px;padding:8px 10px;b
 .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 h2{font-size:19px}
 .table-wrap{overflow:auto}
-table{border-collapse:collapse;width:100%;min-width:1050px}
-th,td{border-bottom:1px solid #e6e7e9;padding:8px;text-align:center;white-space:nowrap}
-th{background:#fafafa;font-size:13px;color:#555}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:950px;overflow:hidden}
+th,td{border-bottom:1px solid #e6e7e9;padding:10px 8px;text-align:center;white-space:nowrap}
+thead th{background:linear-gradient(to bottom,#f8fafc,#eef2f6);font-size:13px;color:#454b54;font-weight:600;border-top:1px solid #e1e5ea;border-bottom:2px solid #d7dce2}
+thead th:first-child{border-top-right-radius:9px}
+thead th:last-child{border-top-left-radius:9px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#fafbfd}
 td input{width:100%;min-width:95px}
 td:first-child input{min-width:115px}
-.cost,.live-price,.days,.gregorian{font-variant-numeric:tabular-nums}
+.cost,.live-price,.days{font-variant-numeric:tabular-nums}
 .profit{font-weight:600}
 .delete{border:0;font-size:22px;line-height:1;color:#a22;padding:2px 8px}
 @media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column}.actions{width:100%}}
