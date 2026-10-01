@@ -1,5 +1,6 @@
-// v2: داده‌های اولیه کامل نگه داشته می‌شوند و محاسبات بر پایهٔ تاریخ جلالی انجام می‌شود.
-const KEY="stocks-web-v2";
+const KEY="stocks-web-v3";
+const LEGACY_KEY="stocks-web-v2";
+const DEFAULT_SYMBOL="عیار";
 const initialData=[
   ["1405/04/28",10,520000,6240],["1405/04/29",10,510000,6120],
   ["1405/05/04",10,500000,6000],["1405/05/31",10,580000,6960],
@@ -10,90 +11,49 @@ const initialData=[
   ["1405/06/24",16,630000,0],["1405/07/01",384,650000,0],
   ["1405/07/08",150,710000,85200]
 ];
-const $=s=>document.querySelector(s);
-const rowsEl=$("#rows"), priceEl=$("#currentPrice"), feeEl=$("#sellFee");
+const $=s=>document.querySelector(s), rowsEl=$("#rows"), priceEl=$("#currentPrice"), feeEl=$("#sellFee");
+let app=loadApp(), activeSymbol=app.activeSymbol||DEFAULT_SYMBOL, calendarTarget=null, calendarCursor=null;
 function faToEn(s){return String(s??"").replace(/[۰-۹]/g,c=>"۰۱۲۳۴۵۶۷۸۹".indexOf(c)).replace(/[٠-٩]/g,c=>"٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/٫/g,".").replace(/٬/g,"").replace(/,/g,"").replace(/[\/\\-]/g,"/")}
 function enToFa(s){return String(s??"").replace(/\d/g,d=>"۰۱۲۳۴۵۶۷۸۹"[d])}
 function num(v){return Number(faToEn(v).replace(/[^0-9.+-]/g,""))||0}
 function fmt(v){return Math.round(v||0).toLocaleString("fa-IR")}
 function fmtPct(v){return (v*100).toLocaleString("fa-IR",{minimumFractionDigits:2,maximumFractionDigits:2})+"٪"}
-function formatNumericInput(input,decimal=false){
-  let s=faToEn(input.value).replace(/[^0-9.]/g,"");
-  if(decimal){const parts=s.split(".");s=parts[0]+(parts.length>1?"."+parts.slice(1).join(""):"")}
-  else{s=s.split(".")[0]}
-  input.value=enToFa(s.replace(".","٫"));
-}
-function formatDateInput(input){
-  let s=faToEn(input.value).replace(/[^0-9/]/g,"");
-  input.value=enToFa(s);
-}
+function formatNumericInput(input,decimal=false){let s=faToEn(input.value).replace(/[^0-9.]/g,"");if(decimal){const p=s.split(".");s=p[0]+(p.length>1?"."+p.slice(1).join(""):"")}else s=s.split(".")[0];input.value=enToFa(s.replace(".","٫"))}
 function div(a,b){return Math.floor(a/b)}
-function jalaliToGregorian(jy,jm,jd){
-  jy=Number(jy);jm=Number(jm);jd=Number(jd);
-  const epBase=jy-(jy>=0?474:473),epYear=474+((epBase%2820+2820)%2820);
-  const md=jm<=7?(jm-1)*31:(jm-1)*30+6;
-  const days=jd+md+div(epYear*682-110,2816)+(epYear-1)*365+div(epBase,2820)*1029983+(1948320-1);
-  let gy=400*div(days,146097),rem=days%146097;
-  if(rem>=36524){gy+=100*div(--rem,36524);rem%=36524;if(rem>=365)rem++}
-  let yday=rem;gy+=4*div(yday,1461);yday%=1461;
-  if(yday>=366){gy+=div(yday-1,365);yday=(yday-1)%365}
-  let gd=yday+1;const leap=(gy%4===0&&gy%100!==0)||gy%400===0;
-  const sal=leap?[31,29,31,30,31,30,31,31,30,31,30,31]:[31,28,31,30,31,30,31,31,30,31,30,31];
-  let gm=1;while(gd>sal[gm-1]){gd-=sal[gm-1];gm++}
-  return {gy,gm,gd,date:new Date(Date.UTC(gy,gm-1,gd))};
-}
-function parseJ(s){
-  const a=faToEn(s).split("/").map(Number);
-  if(a.length!==3||!a.every(Number.isFinite))return null;
-  if(a[0]<1200||a[0]>1600||a[1]<1||a[1]>12||a[2]<1||a[2]>31)return null;
-  const max=a[1]<=6?31:a[1]<=11?30:30;
-  if(a[2]>max)return null;
-  return jalaliToGregorian(a[0],a[1],a[2]);
-}
-function currentJalali(){
-  const parts=new Intl.DateTimeFormat("fa-IR-u-ca-persian-nu-latn",{year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
-  const get=t=>Number(parts.find(p=>p.type===t)?.value);
-  return {y:get("year"),m:get("month"),d:get("day")};
-}
-function daysBetweenJalali(date){
-  const d=parseJ(date);if(!d)return null;
-  const now=currentJalali(), n=jalaliToGregorian(now.y,now.m,now.d);
-  return Math.max(0,Math.round((n.date-d.date)/86400000));
-}
-function state(){return {price:num(priceEl.value),fee:num(feeEl.value),rows:[...rowsEl.querySelectorAll("tr")].map(tr=>({date:tr.querySelector(".jalali").value,shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value)}))}}
-function save(){localStorage.setItem(KEY,JSON.stringify(state()))}
-function addRow(data={date:"",shares:"",price:"",commission:""}){
-  const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);
-  tr.querySelector(".jalali").value=enToFa(data.date);tr.querySelector(".shares").value=data.shares?enToFa(String(data.shares)):"";tr.querySelector(".price").value=data.price?enToFa(String(data.price)):"";tr.querySelector(".commission").value=data.commission?enToFa(String(data.commission)):"";
-  rowsEl.appendChild(tr);
-  tr.querySelector(".jalali").addEventListener("input",()=>{formatDateInput(tr.querySelector(".jalali"));render();save()});
-  [".shares",".price",".commission"].forEach(sel=>tr.querySelector(sel).addEventListener("input",()=>{formatNumericInput(tr.querySelector(sel));render();save()}));
-  tr.querySelector(".delete").onclick=()=>{tr.remove();render();save()};
-  render();
-}
-function render(){
-  const price=num(priceEl.value),fee=num(feeEl.value)/100;
-  let totalShares=0,totalCost=0;
-  rowsEl.querySelectorAll("tr").forEach(tr=>{
-    const date=tr.querySelector(".jalali").value,sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c;
-    tr.querySelector(".cost").textContent=fmt(cost);tr.querySelector(".live-price").textContent=price?fmt(price):"—";
-    const days=daysBetweenJalali(date);tr.querySelector(".days").textContent=days===null?"—":enToFa(String(days));
-    const profit=cost&&price?((price*sh)*(1-fee)-cost)/cost:null;tr.querySelector(".profit").textContent=profit===null?"—":fmtPct(profit);
-    totalShares+=sh;totalCost+=cost;
-  });
-  $("#currentPriceCard").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(totalShares);$("#totalCost").textContent=fmt(totalCost);
-  const totalProfit=totalCost&&price?((totalShares*price)*(1-fee)/totalCost)-1:null;$("#totalProfit").textContent=totalProfit===null?"—":fmtPct(totalProfit);
-}
-$("#addBtn").onclick=()=>addRow();
-priceEl.oninput=()=>{formatNumericInput(priceEl);render();save()};feeEl.oninput=()=>{formatNumericInput(feeEl,true);render();save()};
-$("#resetBtn").onclick=()=>{if(confirm("همهٔ خریدها حذف شوند؟")){localStorage.removeItem(KEY);location.reload()}};
-$("#exportBtn").onclick=()=>{
-  const s=state(),head=["تاریخ","تعداد سهم","قیمت","کارمزد","مبلغ خرید","قیمت فعلی سهم","مدت (روز)","درصد سود"];
-  const lines=[head,...s.rows.map(r=>{const cost=r.shares*r.price+r.commission,days=daysBetweenJalali(r.date),profit=cost&&s.price?((s.price*r.shares)*(1-s.fee/100)-cost)/cost:null;return [r.date,r.shares,r.price,r.commission,cost,s.price,days??"",profit===null?"":profit*100]})];
-  const csv="\uFEFF"+lines.map(x=>x.join(",")).join("\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="سهام.csv";a.click();
-};
-priceEl.value=enToFa("713145");feeEl.value=enToFa("0.12").replace(".","٫");
-const saved=localStorage.getItem(KEY);
-if(saved){try{const s=JSON.parse(saved);priceEl.value=s.price?enToFa(String(s.price)):priceEl.value;feeEl.value=s.fee!=null?enToFa(String(s.fee)).replace(".","٫"):feeEl.value;s.rows.forEach(addRow)}catch{initialData.forEach(x=>addRow({date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}
-else initialData.forEach(x=>addRow({date:x[0],shares:x[1],price:x[2],commission:x[3]}));
-render();
+function jalaliToGregorian(jy,jm,jd){jy=+jy;jm=+jm;jd=+jd;const epBase=jy-(jy>=0?474:473),epYear=474+((epBase%2820+2820)%2820),md=jm<=7?(jm-1)*31:(jm-1)*30+6,days=jd+md+div(epYear*682-110,2816)+(epYear-1)*365+div(epBase,2820)*1029983+(1948320-1);let gy=400*div(days,146097),rem=days%146097;if(rem>=36524){gy+=100*div(--rem,36524);rem%=36524;if(rem>=365)rem++}let yday=rem;gy+=4*div(yday,1461);yday%=1461;if(yday>=366){gy+=div(yday-1,365);yday=(yday-1)%365}let gd=yday+1;const leap=(gy%4===0&&gy%100!==0)||gy%400===0,sal=leap?[31,29,31,30,31,30,31,31,30,31,30,31]:[31,28,31,30,31,30,31,31,30,31,30,31];let gm=1;while(gd>sal[gm-1]){gd-=sal[gm-1];gm++}return {gy,gm,gd,date:new Date(Date.UTC(gy,gm-1,gd))}}
+function parseJ(s){const a=faToEn(s).split("/").map(Number);if(a.length!==3||!a.every(Number.isFinite))return null;const [y,m,d]=a;if(y<1200||y>1600||m<1||m>12||d<1||d>(m<=6?31:m<=11?30:30))return null;return {y,m,d,...jalaliToGregorian(y,m,d)}}
+function currentJalali(){const p=new Intl.DateTimeFormat("fa-IR-u-ca-persian-nu-latn",{year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()),g=t=>Number(p.find(x=>x.type===t)?.value);return {y:g("year"),m:g("month"),d:g("day")}}
+function daysBetweenJalali(date){const d=parseJ(date);if(!d)return null;const n=currentJalali(),now=jalaliToGregorian(n.y,n.m,n.d);return Math.max(0,Math.round((now.date-d.date)/86400000))}
+function makeSymbol(rows=initialData,price=713145){return {price,rows:rows.map(x=>({id:crypto.randomUUID?.()||String(Date.now()+Math.random()),date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}
+function normalizeApp(a){if(a?.symbols&&typeof a.symbols==="object")return a;const symbols={};symbols[DEFAULT_SYMBOL]=makeSymbol();if(a?.price!=null)symbols[DEFAULT_SYMBOL].price=+a.price||713145;if(Array.isArray(a?.rows)&&a.rows.length>0)symbols[DEFAULT_SYMBOL].rows=a.rows.map(r=>({id:crypto.randomUUID?.()||String(Math.random()),date:r.date||"",shares:+r.shares||0,price:+r.price||0,commission:+r.commission||0}));return {version:3,activeSymbol:DEFAULT_SYMBOL,sellFee:a?.fee??0.12,symbols}}
+function loadApp(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)return normalizeApp(v);const old=JSON.parse(localStorage.getItem(LEGACY_KEY)||"null");if(old&&Array.isArray(old.rows)&&old.rows.length>1)return normalizeApp(old)}catch{}return {version:3,activeSymbol:DEFAULT_SYMBOL,sellFee:.12,symbols:{[DEFAULT_SYMBOL]:makeSymbol()}}}
+function saveApp(){app.activeSymbol=activeSymbol;app.sellFee=num(feeEl.value)||.12;app.symbols[activeSymbol].price=num(priceEl.value);localStorage.setItem(KEY,JSON.stringify(app))}
+function active(){return app.symbols[activeSymbol]}
+function sortRows(){active().rows.sort((a,b)=>{const da=parseJ(a.date),db=parseJ(b.date);return (db?.date-b?.date)||0})}
+function renderSymbols(){const el=$("#symbolList");el.innerHTML="";Object.entries(app.symbols).forEach(([name,s])=>{const b=document.createElement("button");b.className="symbol-btn"+(name===activeSymbol?" active":"");b.innerHTML=`<span class="symbol-name">${escapeHtml(name)}</span><span class="symbol-count">${enToFa(String(s.rows.length))}</span>`;b.onclick=()=>switchSymbol(name);el.appendChild(b)})}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function switchSymbol(name){activeSymbol=name;sortRows();renderSymbols();render();saveApp()}
+function addRow(data={date:"",shares:"",price:"",commission:""}){const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||crypto.randomUUID?.()||String(Date.now()+Math.random());tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?enToFa(data.shares):"";tr.querySelector(".price").value=data.price?enToFa(data.price):"";tr.querySelector(".commission").value=data.commission?enToFa(data.commission):"";rowsEl.appendChild(tr);tr.querySelector(".date-input").onclick=()=>openCalendar(tr);tr.querySelector(".date-input").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(tr)}};[".shares",".price",".commission"].forEach(sel=>tr.querySelector(sel).oninput=()=>{formatNumericInput(tr.querySelector(sel));syncRows();render();saveApp()});tr.querySelector(".delete").onclick=()=>{tr.remove();syncRows();render();saveApp()}}
+function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr")].map(tr=>({id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value)}));sortRows()}
+function render(){sortRows();const s=active();$("#activeSymbolTitle").textContent=activeSymbol;priceEl.value=s.price?enToFa(String(s.price)):"";feeEl.value=enToFa(String(app.sellFee??.12)).replace(".","٫");rowsEl.innerHTML="";s.rows.forEach(r=>addRow(r));const price=s.price,fee=(app.sellFee??.12)/100;let totalShares=0,totalCost=0;rowsEl.querySelectorAll("tr").forEach(tr=>{const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c;tr.querySelector(".cost").textContent=fmt(cost);tr.querySelector(".live-price").textContent=price?fmt(price):"—";const days=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=days===null?"—":enToFa(days);const profit=cost&&price?((price*sh)*(1-fee)-cost)/cost:null;const pe=tr.querySelector(".profit");pe.textContent=profit===null?"—":fmtPct(profit);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);totalShares+=sh;totalCost+=cost});$("#currentPriceCard").textContent=price?fmt(price):"—";$("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(totalShares);$("#totalCost").textContent=fmt(totalCost);const totalProfit=totalCost&&price?((totalShares*price)*(1-fee)/totalCost)-1:null;const tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#lastUpdated").textContent=`${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;drawChart()}
+function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".jalali").value);const now=currentJalali();calendarCursor=p?{y:p.y,m:p.m}:{y:now.y,m:now.m};renderCalendar();$("#dateModal").classList.add("open");$("#dateModal").setAttribute("aria-hidden","false")}
+function closeCalendar(){$("#dateModal").classList.remove("open");$("#dateModal").setAttribute("aria-hidden","true");calendarTarget=null}
+function monthDays(y,m){return m<=6?31:m<=11?30:(jalaliToGregorian(y+1,1,1).date-jalaliToGregorian(y,12,1).date)/86400000}
+function renderCalendar(){const {y,m}=calendarCursor;$("#calendarTitle").textContent=`${["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"][m-1]} ${enToFa(y)}`;const first=jalaliToGregorian(y,m,1).date.getUTCDay();const offset=(first+1)%7;const days=monthDays(y,m),selected=parseJ(calendarTarget?.querySelector(".jalali")?.value||"");const today=currentJalali(),g=$("#calendarGrid");g.innerHTML="";for(let i=0;i<offset;i++){const e=document.createElement("button");e.className="empty";g.appendChild(e)}for(let d=1;d<=days;d++){const b=document.createElement("button");b.textContent=enToFa(d);if(today.y===y&&today.m===m&&today.d===d)b.classList.add("today");if(selected?.y===y&&selected?.m===m&&selected?.d===d)b.classList.add("selected");b.onclick=()=>selectDate(y,m,d);g.appendChild(b)}}
+function selectDate(y,m,d){if(!calendarTarget)return;calendarTarget.querySelector(".jalali").value=`${enToFa(String(y))}/${enToFa(String(m).padStart(2,"0"))}/${enToFa(String(d).padStart(2,"0"))}`;syncRows();sortRows();closeCalendar();render();saveApp()}
+$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};
+priceEl.oninput=()=>{formatNumericInput(priceEl);active().price=num(priceEl.value);render();saveApp()};feeEl.oninput=()=>{formatNumericInput(feeEl,true);app.sellFee=num(feeEl.value);render();saveApp()};$("#addBtn").onclick=()=>{const s=active();s.rows.unshift({id:crypto.randomUUID?.()||String(Date.now()),date:"",shares:"",price:"",commission:""});render();saveApp()};
+$("#addSymbolBtn").onclick=()=>{const name=prompt("نام نماد را وارد کنید:");if(!name)return;const n=name.trim();if(!n||app.symbols[n])return alert("این نماد قبلاً وجود دارد.");app.symbols[n]=makeSymbol([],0);activeSymbol=n;renderSymbols();render();saveApp()};
+$("#resetBtn").onclick=()=>{if(confirm("همهٔ داده‌های ذخیره‌شدهٔ سایت حذف شوند؟")){localStorage.removeItem(KEY);localStorage.removeItem(LEGACY_KEY);location.reload()}};
+function exportJson(){const blob=new Blob([JSON.stringify(app,null,2)],{type:"application/json;charset=utf-8"});downloadBlob(blob,"درصد-سود-بورس.json")}
+function csvEscape(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
+function exportCsv(){const lines=[["نماد","تاریخ","تعداد سهم","قیمت","کارمزد","مبلغ خرید","قیمت پایانی سهم","مدت (روز)","درصد سود"]];Object.entries(app.symbols).forEach(([name,s])=>{const fee=(app.sellFee??.12)/100;s.rows.forEach(r=>{const cost=r.shares*r.price+r.commission,days=daysBetweenJalali(r.date),profit=cost&&s.price?((s.price*r.shares)*(1-fee)-cost)/cost:null;lines.push([name,r.date,r.shares,r.price,r.commission,cost,s.price,days??"",profit===null?"":(profit*100).toFixed(2)])})});const csv="\uFEFF"+lines.map(row=>row.map(csvEscape).join(",")).join("\n");downloadBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}),"درصد-سود-بورس.csv")}
+function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+$("#exportJsonBtn").onclick=exportJson;$("#exportCsvBtn").onclick=exportCsv;
+function bindImport(inputId,kind){$(inputId).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const text=await f.text();if(kind==="json"){const incoming=normalizeApp(JSON.parse(text));if(confirm("داده‌های فعلی با داده‌های فایل جایگزین شوند؟")){app=incoming;activeSymbol=app.activeSymbol||Object.keys(app.symbols)[0];saveApp();renderSymbols();render()}}else importCsv(text);e.target.value=""}catch(err){alert("فایل قابل خواندن نیست.")}}}
+bindImport("#importJsonFile","json");bindImport("#importCsvFile","csv");$("#importJsonBtn").onclick=()=>$("#importJsonFile").click();$("#importCsvBtn").onclick=()=>$("#importCsvFile").click();
+function importCsv(text){const rows=parseCsv(text.replace(/^\uFEFF/,""));if(rows.length<2)return alert("فایل CSV داده‌ای ندارد.");const h=rows[0],idx=n=>h.indexOf(n);const required=["نماد","تاریخ","تعداد سهم","قیمت","کارمزد"];if(required.some(x=>idx(x)<0))return alert("ستون‌های لازم CSV پیدا نشد.");const grouped={};rows.slice(1).forEach(r=>{const name=r[idx("نماد")]?.trim()||DEFAULT_SYMBOL;(grouped[name]??=[]).push({id:crypto.randomUUID?.()||String(Math.random()),date:faToEn(r[idx("تاریخ")]||""),shares:num(r[idx("تعداد سهم")]),price:num(r[idx("قیمت")]),commission:num(r[idx("کارمزد")])})});Object.entries(grouped).forEach(([name,rs])=>{if(!app.symbols[name])app.symbols[name]=makeSymbol([],0);app.symbols[name].rows=rs});activeSymbol=Object.keys(grouped)[0]||activeSymbol;renderSymbols();render();saveApp()}
+function parseCsv(text){const out=[];let row=[],cell="",quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quote=false;else cell+=c}else if(c==='"')quote=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=""}else if(c!=='\r')cell+=c}row.push(cell);if(row.length>1||row[0])out.push(row);return out}
+function drawChart(){const canvas=$("#profitChart"),empty=$("#chartEmpty"),s=active(),price=s.price,fee=(app.sellFee??.12)/100;const points=s.rows.map(r=>{const cost=r.shares*r.price+r.commission;return {date:r.date,profit:cost&&price?((price*r.shares)*(1-fee)-cost)/cost:null}}).filter(p=>p.profit!==null&&parseJ(p.date));if(points.length===0){empty.style.display="grid";canvas.style.display="none";return}empty.style.display="none";canvas.style.display="block";const dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr);const pad={l:45,r:18,t:18,b:35},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;const vals=points.map(p=>p.profit*100),min=Math.min(0,...vals),max=Math.max(0,...vals),span=(max-min)||1,x=i=>pad.l+(points.length===1?cw/2:i/(points.length-1)*cw),y=v=>pad.t+(max-v)/span*ch;ctx.font="11px Vazirmatn";ctx.strokeStyle="#d9e0e7";ctx.fillStyle="#727a83";ctx.textAlign="right";[min,(min+max)/2,max].forEach(v=>{ctx.beginPath();ctx.moveTo(pad.l,y(v));ctx.lineTo(w-pad.r,y(v));ctx.stroke();ctx.fillText(`${v.toLocaleString("fa-IR",{maximumFractionDigits:1})}٪`,pad.l-8,y(v)+4)});ctx.beginPath();points.forEach((p,i)=>{const xx=x(i),yy=y(p.profit*100);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)});ctx.strokeStyle="#1769c2";ctx.lineWidth=2.5;ctx.stroke();points.forEach((p,i)=>{const xx=x(i),yy=y(p.profit*100);ctx.beginPath();ctx.arc(xx,yy,4,0,Math.PI*2);ctx.fillStyle=p.profit>=0?"#138a4b":"#c62828";ctx.fill()});ctx.textAlign="center";ctx.fillStyle="#727a83";const step=Math.max(1,Math.ceil(points.length/7));points.forEach((p,i)=>{if(i%step===0)ctx.fillText(enToFa(p.date.slice(5)),x(i),h-10)})}
+window.addEventListener("resize",drawChart);
+renderSymbols();render();

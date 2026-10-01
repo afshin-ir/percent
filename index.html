@@ -4,68 +4,90 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>درصد سود بورس</title>
+<meta name="theme-color" content="#1769c2">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-  <div>
-    <h1>درصد سود بورس</h1>
-    <p>محاسبهٔ سود خریدهای سهم عیار</p>
+  <div class="brand">
+    <div class="brand-mark">٪</div>
+    <div><h1>درصد سود بورس</h1><p>مدیریت خریدها و محاسبهٔ سود و زیان نمادها</p></div>
   </div>
   <div class="actions">
-    <button id="exportBtn">خروجی CSV</button>
+    <button id="exportJsonBtn">خروجی JSON</button>
+    <button id="exportCsvBtn">خروجی CSV</button>
+    <button id="importJsonBtn">ورودی JSON</button>
+    <button id="importCsvBtn">ورودی CSV</button>
+    <input id="importJsonFile" type="file" accept=".json,application/json" hidden>
+    <input id="importCsvFile" type="file" accept=".csv,text/csv" hidden>
     <button id="resetBtn" class="danger">پاک‌کردن همه</button>
   </div>
 </header>
-<main>
-<section class="cards">
-  <div class="card"><span>قیمت فعلی سهم</span><strong id="currentPriceCard">—</strong></div>
-  <div class="card"><span>تعداد کل سهم</span><strong id="totalShares">—</strong></div>
-  <div class="card"><span>مبلغ کل خرید</span><strong id="totalCost">—</strong></div>
-  <div class="card"><span>کل سود</span><strong id="totalProfit">—</strong></div>
-</section>
-<section class="panel settings">
-  <label>قیمت فعلی سهم
-    <input id="currentPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۷۱۳۱۴۵">
-  </label>
-  <label>کارمزد فروش
-    <input id="sellFee" type="text" inputmode="decimal" autocomplete="off" value="۰٫۱۲">
-    <small>درصد</small>
-  </label>
-</section>
-<section class="panel">
-  <div class="panel-head">
-    <h2>خریدها</h2>
-    <button id="addBtn" class="primary">＋ خرید جدید</button>
+<div class="app-shell">
+  <aside class="sidebar panel">
+    <div class="sidebar-head"><h2>نمادها</h2><button id="addSymbolBtn" class="icon-btn" title="نماد جدید">＋</button></div>
+    <div id="symbolList" class="symbol-list"></div>
+    <div class="sidebar-note">برای هر نماد، قیمت پایانی و خریدهای آن نماد جداگانه نگهداری می‌شود.</div>
+  </aside>
+  <main>
+    <section class="hero-row">
+      <div><span class="eyebrow">نماد فعال</span><h2 id="activeSymbolTitle">عیار</h2></div>
+      <div class="hero-price"><span>قیمت پایانی سهم</span><strong id="currentPriceCard">—</strong></div>
+    </section>
+
+    <section class="cards">
+      <div class="card"><span>قیمت پایانی سهم</span><strong id="currentPriceCard2">—</strong></div>
+      <div class="card"><span>تعداد کل سهم</span><strong id="totalShares">—</strong></div>
+      <div class="card"><span>مبلغ کل خرید</span><strong id="totalCost">—</strong></div>
+      <div class="card profit-card"><span>کل سود</span><strong id="totalProfit">—</strong></div>
+    </section>
+
+    <section class="panel settings">
+      <div class="section-title"><h2>تنظیمات نماد</h2><span id="lastUpdated"></span></div>
+      <div class="settings-grid">
+        <label>قیمت پایانی سهم<input id="currentPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۷۱۳۱۴۵"></label>
+        <label>کارمزد فروش<div class="suffix-input"><input id="sellFee" type="text" inputmode="decimal" autocomplete="off" value="۰٫۱۲"><small>درصد</small></div></label>
+      </div>
+    </section>
+
+    <section class="panel chart-panel">
+      <div class="panel-head"><div><h2>روند سود و زیان</h2><p class="muted">درصد سود/زیان هر خرید بر اساس قیمت پایانی فعلی</p></div></div>
+      <div class="chart-wrap"><canvas id="profitChart" height="230"></canvas><div id="chartEmpty" class="chart-empty">برای نمایش نمودار، اطلاعات خرید وارد کنید.</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>خریدها</h2><p class="muted">خریدهای جدید در بالای فهرست قرار می‌گیرند.</p></div><button id="addBtn" class="primary">＋ خرید جدید</button></div>
+      <div class="table-wrap">
+        <table><thead><tr>
+          <th>تاریخ</th><th>تعداد سهم</th><th>قیمت</th><th>کارمزد</th><th>مبلغ خرید</th><th>قیمت پایانی سهم</th><th>مدت (روز)</th><th>درصد سود</th><th></th>
+        </tr></thead><tbody id="rows"></tbody></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="dateModal" class="modal" aria-hidden="true">
+  <div class="modal-card calendar-card">
+    <div class="calendar-head"><button id="prevMonth" class="icon-btn">‹</button><div><strong id="calendarTitle"></strong><button id="todayBtn" class="link-btn">امروز</button></div><button id="nextMonth" class="icon-btn">›</button></div>
+    <div class="weekdays"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div>
+    <div id="calendarGrid" class="calendar-grid"></div>
+    <div class="modal-actions"><button id="closeCalendar">انصراف</button></div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th>تاریخ</th><th>تعداد سهم</th><th>قیمت</th>
-        <th>کارمزد</th><th>مبلغ خرید</th><th>قیمت فعلی</th>
-        <th>مدت (روز)</th><th>درصد سود</th><th></th>
-      </tr></thead>
-      <tbody id="rows"></tbody>
-    </table>
-  </div>
-</section>
-</main>
-<template id="rowTemplate">
-<tr>
-  <td><input class="jalali" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۴/۲۸"></td>
+</div>
+
+<template id="rowTemplate"><tr>
+  <td><input class="jalali date-input" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۴/۲۸" readonly></td>
   <td><input class="shares" type="text" inputmode="numeric" autocomplete="off"></td>
   <td><input class="price" type="text" inputmode="numeric" autocomplete="off"></td>
   <td><input class="commission" type="text" inputmode="numeric" autocomplete="off"></td>
-  <td class="cost">—</td>
-  <td class="live-price">—</td>
-  <td class="days">—</td>
-  <td class="profit">—</td>
+  <td class="cost">—</td><td class="live-price">—</td><td class="days">—</td><td class="profit">—</td>
   <td><button class="delete" title="حذف">×</button></td>
-</tr>
-</template>
+</tr></template>
+
 <script src="app.js"></script>
 </body>
 </html>
