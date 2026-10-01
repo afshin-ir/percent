@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>دفتر سهام — عیار</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>دفتر سهام</h1>
+    <p>محاسبهٔ سود خریدهای سهم عیار</p>
+  </div>
+  <div class="actions">
+    <button id="exportBtn">خروجی CSV</button>
+    <button id="resetBtn" class="danger">پاک‌کردن همه</button>
+  </div>
+</header>
+
+<main>
+<section class="cards">
+  <div class="card"><span>قیمت فعلی سهم</span><strong id="currentPriceCard">—</strong></div>
+  <div class="card"><span>تعداد کل سهم</span><strong id="totalShares">—</strong></div>
+  <div class="card"><span>مبلغ کل خرید</span><strong id="totalCost">—</strong></div>
+  <div class="card"><span>کل سود</span><strong id="totalProfit">—</strong></div>
+</section>
+
+<section class="panel settings">
+  <label>قیمت فعلی سهم
+    <input id="currentPrice" type="number" min="0" step="1" placeholder="مثلاً 713145">
+  </label>
+  <label>کارمزد فروش
+    <input id="sellFee" type="number" min="0" step="0.01" value="0.12">
+    <small>درصد</small>
+  </label>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>خریدها</h2>
+    <button id="addBtn" class="primary">＋ افزودن خرید</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>تاریخ</th><th>تاریخ میلادی</th><th>تعداد سهم</th><th>قیمت</th>
+        <th>کارمزد</th><th>مبلغ خرید</th><th>قیمت فعلی</th>
+        <th>مدت (روز)</th><th>درصد سود</th><th></th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<template id="rowTemplate">
+<tr>
+  <td><input class="jalali" inputmode="numeric" placeholder="1405/04/28"></td>
+  <td class="gregorian">—</td>
+  <td><input class="shares" type="number" min="0" step="1"></td>
+  <td><input class="price" type="number" min="0" step="1"></td>
+  <td><input class="commission" type="number" min="0" step="1"></td>
+  <td class="cost">—</td>
+  <td class="live-price">—</td>
+  <td class="days">—</td>
+  <td class="profit">—</td>
+  <td><button class="delete" title="حذف">×</button></td>
+</tr>
+</template>
+<script src="app.js"></script>
+</body>
+</html>
