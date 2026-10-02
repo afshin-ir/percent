@@ -24,3 +24,102 @@ function chartData(){const s=active(),items=[];s.rows.forEach(r=>{const cost=r.s
 function drawChart(){const canvas=$("#profitChart"),empty=$("#chartEmpty"),tip=$("#chartTooltip"),items=chartData();chartPoints=[];if(!items.length){empty.style.display="grid";canvas.style.display="none";tip.style.display="none";return}empty.style.display="none";canvas.style.display="block";const dpr=devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);const pad={l:52,r:18,t:18,b:42},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,vals=items.map(x=>x.profit*100),min=Math.min(0,...vals),max=Math.max(0,...vals),span=(max-min)||1,y=v=>pad.t+(max-v)/span*ch,zero=y(0);ctx.font="11px Vazirmatn";ctx.strokeStyle="#d9e0e7";ctx.fillStyle="#727a83";ctx.textAlign="right";[min,(min+max)/2,max].forEach(v=>{ctx.beginPath();ctx.moveTo(pad.l,y(v));ctx.lineTo(w-pad.r,y(v));ctx.stroke();ctx.fillText(`${v.toLocaleString("fa-IR",{maximumFractionDigits:1})}٪`,pad.l-8,y(v)+4)});const bw=Math.min(48,Math.max(18,(cw/items.length)*.58));items.forEach((p,i)=>{const x=pad.l+(i+.5)*(cw/items.length),yy=y(p.profit*100),top=Math.min(yy,zero),height=Math.max(2,Math.abs(yy-zero));ctx.fillStyle=p.profit>=0?"#138a4b":"#c62828";ctx.fillRect(x-bw/2,top,bw,height);chartPoints.push({x:x-bw/2,y:top,w:bw,h:height,data:p});ctx.fillStyle="#727a83";ctx.textAlign="center";ctx.fillText(enToFa(p.date?p.date.slice(5):""),x,h-10)})}
 $("#profitChart").addEventListener("mousemove",e=>{const c=e.currentTarget,r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,p=chartPoints.find(q=>x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);if(!p){$("#chartTooltip").style.display="none";return}const d=p.data;const sign=d.amount>0?"+":d.amount<0?"−":"";$("#chartTooltip").innerHTML=`<strong>${escapeHtml(d.name)}</strong>${d.date?`<span>تاریخ: ${enToFa(d.date)}</span>`:""}<span class="tip-amount">مبلغ سود/زیان: <b class="${d.amount>0?"positive":d.amount<0?"negative":""}">${sign}${fmt(Math.abs(d.amount))} ریال</b></span><span class="tip-profit">درصد سود/زیان: <b class="${d.profit>0?"positive":d.profit<0?"negative":""}">${fmtPct(d.profit)}</b></span>`;const tip=$("#chartTooltip");tip.style.display="block";tip.style.left=Math.min(Math.max(8,x+12),c.clientWidth-tip.offsetWidth-8)+"px";tip.style.top=Math.min(Math.max(8,y+12),c.clientHeight-tip.offsetHeight-8)+"px"});$("#profitChart").addEventListener("mouseleave",()=>$("#chartTooltip").style.display="none");
 function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".jalali").value),now=currentJalali();calendarCursor=p?{y:p.y,m:p.m}:{y:now.y,m:now.m};renderCalendar();$("#dateModal").classList.add("open");$("#dateModal").setAttribute("aria-hidden","false")}function closeCalendar(){$("#dateModal").classList.remove("open");$("#dateModal").setAttribute("aria-hidden","true");calendarTarget=null}function monthDays(y,m){return m<=6?31:m<=11?30:(jalaliToGregorian(y+1,1,1).date-jalaliToGregorian(y,12,1).date)/86400000}function renderCalendar(){const{y,m}=calendarCursor;$("#calendarTitle").textContent=`${["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"][m-1]} ${enToFa(y)}`;const first=jalaliToGregorian(y,m,1).date.getUTCDay(),offset=(first+1)%7,days=monthDays(y,m),selected=parseJ(calendarTarget?.querySelector(".jalali")?.value||""),today=currentJalali(),g=$("#calendarGrid");g.innerHTML="";for(let i=0;i<offset;i++){const e=document.createElement("button");e.className="empty";g.appendChild(e)}for(let d=1;d<=days;d++){const b=document.createElement("button");b.textContent=enToFa(d);if(today.y===y&&today.m===m&&today.d===d)b.classList.add("today");if(selected?.y===y&&selected?.m===m&&selected?.d===d)b.classList.add("selected");b.onclick=()=>selectDate(y,m,d);g.appendChild(b)}}function selectDate(y,m,d){if(!calendarTarget)return;calendarTarget.querySelector(".jalali").value=`${enToFa(y)}/${enToFa(String(m).padStart(2,"0"))}/${enToFa(String(d).padStart(2,"0"))}`;syncRows();closeCalendar();render();saveApp()}$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};$("#choiceModal").onclick=e=>{if(e.target.id==="choiceModal")closeChoice()};window.addEventListener("resize",drawChart);renderSymbols();render();
+// Dashboard patch
+const OVERVIEW_STATE_KEY = "overview";
+let overviewMode = !!app.ui?.overview;
+const mainRoot = document.querySelector("main");
+const symbolViewSelectors = [".hero-row", ".cards", ".settings", ".chart-panel", "main > .panel"];
+
+function dashboardNumber(v){ return fmt(v); }
+function dashboardPct(v){ return fmtPct(v); }
+function portfolioData(){
+  const items=[];
+  let shares=0, purchases=0, investment=0, current=0;
+  Object.entries(app.symbols).forEach(([name,s])=>{
+    const rows=Array.isArray(s.rows)?s.rows:[];
+    const totalShares=rows.reduce((n,r)=>n+(Number(r.shares)||0),0);
+    const cost=rows.reduce((n,r)=>n+(Number(r.shares)||0)*(Number(r.price)||0)+(Number(r.commission)||0),0);
+    const fee=(Number(s.fee)||0)/100;
+    const hasPrice=Number(s.price)>0;
+    const value=hasPrice ? totalShares*Number(s.price)*(1-fee) : null;
+    const profit=value===null?null:value-cost;
+    const ret=profit!==null&&cost?profit/cost:null;
+    shares+=totalShares; purchases+=rows.length; investment+=cost; if(value!==null) current+=value;
+    items.push({name,totalShares,purchases,cost,value,profit,ret});
+  });
+  const priced=items.filter(x=>x.value!==null);
+  const totalProfit=priced.length?current-investment:null;
+  const totalRet=totalProfit!==null&&investment?totalProfit/investment:null;
+  return {items,shares,purchases,investment,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length};
+}
+function dashboardValue(v, suffix=""){
+  return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
+}
+function renderOverview(){
+  const d=portfolioData();
+  symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display="none"));
+  let el=document.querySelector("#overviewView");
+  if(!el){
+    el=document.createElement("section"); el.id="overviewView"; mainRoot.appendChild(el);
+  }
+  const rows=d.items.map(x=>{
+    const share=d.current&&x.value!==null?x.value/d.current:null;
+    const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}"><td><button class="overview-symbol" type="button">${escapeHtml(x.name)}</button></td><td>${dashboardNumber(x.totalShares)}</td><td>${dashboardValue(x.cost)}</td><td>${dashboardValue(x.value)}</td><td class="${profitClass}">${x.profit===null?"—":(x.profit>0?"+":"")+dashboardNumber(x.profit)}</td><td class="${profitClass}">${x.ret===null?"—":dashboardPct(x.ret)}</td><td>${share===null?"—":dashboardPct(share)}</td></tr>`;
+  }).join("");
+  const bars=d.items.filter(x=>x.value!==null&&x.value>0).sort((a,b)=>b.value-a.value).map(x=>{
+    const pct=d.current?x.value/d.current:0;
+    return `<div class="allocation-row"><div class="allocation-head"><span>${escapeHtml(x.name)}</span><b>${dashboardPct(pct)}</b></div><div class="allocation-track"><span style="width:${Math.max(0,Math.min(100,pct*100))}%"></span></div></div>`;
+  }).join("");
+  const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
+  el.innerHTML=`
+    <div class="overview-head"><div><span class="eyebrow">وضعیت کل سبد</span><h2>نمای کلی</h2><p>خلاصه‌ای از وضعیت همهٔ نمادهای موجود در سبد</p></div></div>
+    <section class="overview-cards">
+      <div class="overview-card"><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
+      <div class="overview-card"><span>کل سرمایه‌گذاری</span><strong>${dashboardValue(d.investment)}</strong></div>
+      <div class="overview-card ${profitClass}"><span>سود/زیان کل</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
+      <div class="overview-card ${profitClass}"><span>بازدهی کل</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
+    </section>
+    <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
+    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">برای مشاهدهٔ جزئیات، روی نماد موردنظر کلیک کنید.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>سود/زیان</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>
+    <section class="panel overview-panel allocation-panel"><div class="panel-head"><div><h2>توزیع فعلی سبد</h2><p class="muted">سهم هر نماد بر اساس ارزش فعلی آن از کل سبد</p></div></div><div class="allocation-list">${bars||`<div class="overview-empty">برای نمایش توزیع سبد، قیمت پایانی نمادها را وارد کنید.</div>`}</div></section>`;
+  el.querySelectorAll(".overview-row").forEach(row=>row.onclick=e=>{if(e.target.closest("button")){overviewMode=false;activeSymbol=row.dataset.symbol;app.ui.overview=false;renderSymbols();render();saveApp()}});
+  el.style.display="block";
+}
+function renderSymbolView(){
+  const el=document.querySelector("#overviewView"); if(el)el.style.display="none";
+  symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(node=>node.style.display=""));
+  sortRows();
+  const s=active();
+  $("#activeSymbolTitle").textContent=activeSymbol;
+  priceEl.value=s.price?formatThousands(s.price):"";
+  feeEl.value=formatDecimal(s.fee??.12);
+  rowsEl.innerHTML="";
+  s.rows.forEach(r=>addRow(r));
+  $("#tableEmpty").style.display=s.rows.length?"none":"block";
+  updateTableOnly();
+  $("#lastUpdated").textContent=`${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;
+  drawChart();
+}
+function renderSymbolsDashboardAware(){
+  const el=$("#symbolList");el.innerHTML="";
+  const overview=document.createElement("button");
+  overview.className="symbol-btn overview-btn"+(overviewMode?" active":"");
+  overview.innerHTML='<span class="overview-icon">▦</span><span class="symbol-name">نمای کلی</span>';
+  overview.onclick=()=>{overviewMode=true;app.ui=app.ui||{};app.ui.overview=true;renderSymbolsDashboardAware();render();saveApp()};
+  el.appendChild(overview);
+  (app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{
+    const s=app.symbols[name];if(!s)return;
+    const b=document.createElement("button");b.className="symbol-btn"+(!overviewMode&&name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;
+    b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span><span class="symbol-count">${enToFa(String(s.rows.length))}</span>`;
+    b.onclick=()=>{overviewMode=false;app.ui=app.ui||{};app.ui.overview=false;switchSymbol(name)};
+    b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbolsDashboardAware();saveApp()};el.appendChild(b);
+  });
+}
+function saveAppDashboardAware(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;app.ui.overview=overviewMode;localStorage.setItem(KEY,JSON.stringify(app))}
+function renderDashboardAware(){if(overviewMode){renderOverview();return}renderSymbolView()}
+// Replace the view/render entry points while preserving the existing symbol-page implementation.
+renderSymbols=renderSymbolsDashboardAware;
+saveApp=saveAppDashboardAware;
+render=renderDashboardAware;
+renderSymbols();render();saveApp();
