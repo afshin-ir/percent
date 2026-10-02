@@ -53,7 +53,7 @@ function portfolioData(){
   const priced=items.filter(x=>x.value!==null);
   const totalProfit=priced.length?items.reduce((sum,x)=>sum+(x.profit??0),0):null;
   const totalRet=totalProfit!==null&&investment?totalProfit/investment:null;
-  const totalAssets=totalProfit===null?null:investment+totalProfit;
+  const totalAssets=totalProfit===null?null:investment+totalProfit+(Number(app.portfolioCash)||0);
   return {items,shares,purchases,investment,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,portfolioCash:Number(app.portfolioCash)||0,buyingPower,totalAssets};
 }
 function dashboardValue(v, suffix=""){
