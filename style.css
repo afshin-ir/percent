@@ -5,3 +5,44 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 /* نمای کلی سبد */
 .overview-head{padding:3px 3px 15px}.overview-head h2{font-size:27px;margin-top:2px}.overview-head p{font-size:12px;color:var(--muted);margin-top:5px}.overview-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}.overview-card{padding:16px 17px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:14px;box-shadow:0 5px 20px rgba(35,55,80,.045)}.overview-card span{display:block;color:#747b83;font-size:12px}.overview-card strong{display:block;font-size:21px;margin-top:7px}.overview-card.positive strong,.overview-card.negative strong{color:inherit}.overview-stats{display:flex;flex-wrap:wrap;gap:8px 22px;color:#69717a;font-size:12px;padding:4px 4px 16px}.overview-stats b{color:var(--ink);font-weight:700}.overview-panel{padding:16px;margin-bottom:16px}.overview-table{width:100%;min-width:720px}.overview-table tbody tr{cursor:pointer;transition:background .15s}.overview-table tbody tr:hover{background:#f5f9fd}.overview-symbol{border:0;background:transparent;padding:2px 5px;color:#1769c2;font-weight:700}.overview-symbol:hover{background:transparent;text-decoration:underline}.overview-empty{text-align:center!important;color:#858c94;padding:30px!important}.allocation-list{display:flex;flex-direction:column;gap:14px}.allocation-row{width:100%}.allocation-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px}.allocation-head b{font-weight:700}.allocation-track{height:10px;background:#edf1f5;border-radius:999px;overflow:hidden}.allocation-track span{display:block;height:100%;background:var(--blue);border-radius:999px;min-width:2px}.overview-btn{font-weight:600}.overview-btn.active{background:#e8f2ff;color:#0d5bab;border-color:#c8def8}.overview-icon{width:20px;text-align:center;color:currentColor;font-size:16px}
 @media(max-width:1050px){.overview-cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.overview-cards{grid-template-columns:1fr 1fr}.overview-stats{gap:7px 14px}}
+
+/* نسخهٔ ۴.۶ — بازطراحی رابط کاربری */
+:root{--surface:#fff;--surface-soft:#f7f9fc;--line:#dfe5eb;--blue:#1769c2;--blue-soft:#eaf3ff;--ink:#1f2933;--muted:#737c86;--green:#138a4b;--red:#c62828}
+.symbol-summary-cards .card{min-height:86px}
+.symbol-summary-cards .card span{font-size:12px}
+.symbol-summary-cards .card strong{font-size:21px;margin-top:8px}
+.symbol-summary-cards .profit-card strong.positive{color:var(--green)}
+.symbol-summary-cards .profit-card strong.negative{color:var(--red)}
+.chart-panel .panel-head{margin-bottom:0}
+.chart-panel .small-btn{white-space:nowrap}
+.chart-panel .small-btn.active{background:var(--blue-soft);border-color:#bfd8f5;color:#0d5bab}
+.chart-body{padding-top:14px}
+.chart-body[hidden]{display:none}
+.symbol-card{min-height:58px!important;padding:9px 10px!important;display:grid!important;grid-template-columns:20px 1fr auto;align-items:center;gap:7px;text-align:right}
+.symbol-card .symbol-main{display:flex;flex-direction:column;min-width:0;gap:2px}
+.symbol-card .symbol-name{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.symbol-card .symbol-meta{font-size:10px;color:var(--muted);font-weight:400}
+.symbol-card .symbol-result{font-size:12px;font-weight:700;white-space:nowrap}
+.symbol-card .symbol-result.positive{color:var(--green)}
+.symbol-card .symbol-result.negative{color:var(--red)}
+.overview-btn{min-height:46px!important}
+.sidebar-head{margin-bottom:8px}
+.sidebar-note{font-size:10px;line-height:1.8}
+.overview-cards .overview-card strong{font-variant-numeric:tabular-nums}
+.overview-card.positive strong{color:var(--green)}
+.overview-card.negative strong{color:var(--red)}
+.overview-table .positive{color:var(--green);font-weight:700}
+.overview-table .negative{color:var(--red);font-weight:700}
+.overview-table th,.overview-table td{white-space:nowrap}
+@media(max-width:1050px){
+  .symbol-card{min-width:175px!important}
+}
+@media(max-width:700px){
+  .symbol-summary-cards{grid-template-columns:1fr 1fr}
+  .symbol-summary-cards .card{min-height:78px}
+  .symbol-summary-cards .card strong{font-size:18px}
+  .chart-panel .panel-head{flex-direction:row;align-items:center}
+  .chart-panel .panel-head>div{min-width:0}
+  .chart-panel .panel-head h2{font-size:15px}
+  .chart-panel .panel-head p{font-size:10px}
+}
