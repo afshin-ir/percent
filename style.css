@@ -39,3 +39,4 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 @media(max-width:1200px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.cards{grid-template-columns:1fr 1fr}.card-icon{width:30px;height:30px}}
 .overview-card{min-width:0}
+.trade-actions{display:flex;gap:8px;align-items:center}.sell-btn{border:1px solid #e0a2a2;background:#fff5f5;color:#c62828;border-radius:9px;padding:8px 13px;cursor:pointer;font:inherit;font-size:12px}.sell-btn:hover{background:#ffeaea}table .type{min-width:74px;padding:7px 6px}tbody tr:has(.type option:checked[value="sell"]) td{background:#fffafa}
