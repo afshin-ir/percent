@@ -46,3 +46,15 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
   .chart-panel .panel-head h2{font-size:15px}
   .chart-panel .panel-head p{font-size:10px}
 }
+
+/* Version 4.7 — portfolio allocation cards */
+.portfolio-share-card strong{font-variant-numeric:tabular-nums}
+.portfolio-allocation-card{margin-top:16px}
+.portfolio-allocation-card .allocation-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 24px;padding:4px 0 2px}
+.portfolio-allocation-card .allocation-row{min-width:0}
+.portfolio-allocation-card .allocation-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
+.portfolio-allocation-card .allocation-head span{font-weight:700}
+.portfolio-allocation-card .allocation-head b{font-size:13px}
+.portfolio-allocation-card .allocation-track{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.portfolio-allocation-card .allocation-track span{display:block;height:100%;border-radius:inherit;background:var(--primary)}
+@media(max-width:700px){.portfolio-allocation-card .allocation-list{grid-template-columns:1fr}}

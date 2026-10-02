@@ -56,6 +56,18 @@ function portfolioData(){
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
 }
+function portfolioShareForSymbol(name){
+  const d=portfolioData();
+  const item=d.items.find(x=>x.name===name);
+  if(!item || item.value===null || d.current===null || d.current<=0)return null;
+  return item.value/d.current;
+}
+function renderPortfolioShare(){
+  const el=$("#portfolioShare");
+  if(!el)return;
+  const share=portfolioShareForSymbol(activeSymbol);
+  el.textContent=share===null?"—":dashboardPct(share);
+}
 function renderOverview(){
   const d=portfolioData();
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display="none"));
@@ -83,7 +95,7 @@ function renderOverview(){
     </section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
     <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">برای مشاهدهٔ جزئیات، روی نماد موردنظر کلیک کنید.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>سود/زیان</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>
-    <section class="panel overview-panel allocation-panel"><div class="panel-head"><div><h2>توزیع فعلی سبد</h2><p class="muted">سهم هر نماد بر اساس ارزش فعلی آن از کل سبد</p></div></div><div class="allocation-list">${bars||`<div class="overview-empty">برای نمایش توزیع سبد، قیمت پایانی نمادها را وارد کنید.</div>`}</div></section>`;
+    <section class="panel overview-panel allocation-panel portfolio-allocation-card"><div class="panel-head"><div><h2>سهم نمادها از سبد</h2><p class="muted">درصد هر نماد بر اساس ارزش فعلی آن از کل سبد</p></div></div><div class="allocation-list">${bars||`<div class="overview-empty">برای نمایش سهم نمادها، قیمت پایانی نمادها را وارد کنید.</div>`}</div></section>`;
   el.querySelectorAll(".overview-row").forEach(row=>row.onclick=e=>{if(e.target.closest("button")){overviewMode=false;activeSymbol=row.dataset.symbol;app.ui.overview=false;renderSymbols();render();saveApp()}});
   el.style.display="block";
 }
@@ -99,6 +111,7 @@ function renderSymbolView(){
   s.rows.forEach(r=>addRow(r));
   $("#tableEmpty").style.display=s.rows.length?"none":"block";
   updateTableOnly();
+  renderPortfolioShare();
   $("#lastUpdated").textContent=`${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;
   drawChart();
 }
