@@ -51,9 +51,10 @@ function portfolioData(){
   const buyingPower=investment+(Number(app.portfolioCash)||0);
   items.forEach(x=>x.share=buyingPower?x.cost/buyingPower:null);
   const priced=items.filter(x=>x.value!==null);
-  const totalProfit=priced.length?current-investment:null;
+  const totalProfit=priced.length?items.reduce((sum,x)=>sum+(x.profit??0),0):null;
   const totalRet=totalProfit!==null&&investment?totalProfit/investment:null;
-  return {items,shares,purchases,investment,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,portfolioCash:Number(app.portfolioCash)||0,buyingPower};
+  const totalAssets=totalProfit===null?null:investment+totalProfit;
+  return {items,shares,purchases,investment,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,portfolioCash:Number(app.portfolioCash)||0,buyingPower,totalAssets};
 }
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
@@ -72,16 +73,16 @@ function renderOverview(){
   el.innerHTML=`
     <div class="overview-head"><div><span class="eyebrow">وضعیت کل سبد</span><h2>نمای کلی</h2><p>خلاصه‌ای از وضعیت همهٔ نمادهای موجود در سبد</p></div></div>
     <section class="overview-cards">
-      <div class="overview-card"><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
-      <div class="overview-card"><span>کل سرمایه‌گذاری</span><strong>${dashboardValue(d.investment)}</strong></div>
-      <div class="overview-card ${profitClass}"><span>سود/زیان کل</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
-      <div class="overview-card ${profitClass}"><span>بازدهی کل</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
+      <div class="overview-card card-blue"><i class="card-icon">◉</i><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
+      <div class="overview-card card-indigo"><i class="card-icon">▣</i><span>کل سرمایه‌گذاری</span><strong>${dashboardValue(d.investment)}</strong></div>
+      <div class="overview-card card-green ${profitClass}"><i class="card-icon">↗</i><span>سود/زیان کل</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
+      <div class="overview-card card-purple ${profitClass}"><i class="card-icon">%</i><span>بازدهی کل</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
     </section>
-    <section class="panel portfolio-cash-panel"><div class="panel-head"><div><h2>قدرت خرید پورتفو</h2><p class="muted">قدرت خرید = مجموع مبالغ خرید همهٔ نمادها + موجودی نقد فعلی</p></div><strong id="buyingPowerValue">${dashboardValue(d.buyingPower)}</strong></div><label class="cash-field">موجودی نقد پورتفو<input id="portfolioCash" type="text" inputmode="numeric" value="${d.portfolioCash?formatThousands(d.portfolioCash):""}" placeholder="مثلاً ۶۰۰٬۰۰۰"></label></section>
+    <section class="panel portfolio-cash-panel"><div class="panel-head"><div><h2><span class="section-icon">◈</span> قدرت خرید پورتفو</h2><p class="muted">قدرت خرید = مجموع مبالغ خرید همهٔ نمادها + موجودی نقد فعلی</p></div><strong id="buyingPowerValue">${dashboardValue(d.buyingPower)}</strong></div><div class="portfolio-assets"><span>دارایی کل</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong></div><label class="cash-field">موجودی نقد پورتفو<input id="portfolioCash" type="text" inputmode="numeric" value="${d.portfolioCash?formatThousands(d.portfolioCash):""}" placeholder="مثلاً ۶۰۰٬۰۰۰"></label></section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
     <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس مبلغ خرید و قدرت خرید پورتفو محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>سود/زیان</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
   const cashInput=$("#portfolioCash");
-  cashInput.oninput=()=>{app.portfolioCash=num(cashInput.value);$("#buyingPowerValue").textContent=dashboardValue(portfolioData().buyingPower);saveApp()};
+  cashInput.oninput=()=>{app.portfolioCash=num(cashInput.value);const pd=portfolioData();$("#buyingPowerValue").textContent=dashboardValue(pd.buyingPower);$("#totalAssetsValue").textContent=dashboardValue(pd.totalAssets);saveApp()};
   cashInput.onblur=()=>{cashInput.value=formatThousands(cashInput.value);app.portfolioCash=num(cashInput.value);renderOverview();saveApp()};
   el.querySelectorAll(".overview-row").forEach(row=>row.onclick=e=>{if(e.target.closest("button")){overviewMode=false;activeSymbol=row.dataset.symbol;app.ui.overview=false;renderSymbols();render();saveApp()}});
   el.style.display="block";

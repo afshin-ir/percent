@@ -26,3 +26,16 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .overview-table .negative{color:var(--red)!important}
 @media(max-width:1050px){.cards,.overview-cards{grid-template-columns:repeat(2,minmax(140px,210px))}}
 @media(max-width:700px){.cards,.overview-cards{grid-template-columns:1fr 1fr}.cash-field{flex-direction:column;align-items:stretch}.cash-field input{width:100%}.settings-grid label{min-width:0;width:100%}}
+
+/* نسخه ۴٫۹ — کارت‌های اطلاعاتی */
+.cards{grid-template-columns:repeat(5,minmax(0,1fr));align-items:stretch}
+.card,.overview-card{position:relative;text-align:center;overflow:hidden}
+.card-icon{display:flex;width:34px;height:34px;margin:0 auto 9px;border-radius:10px;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:17px;background:rgba(255,255,255,.72)}
+.card-blue{background:linear-gradient(135deg,#eef7ff,#dceeff);border-color:#c5e0f7}.card-indigo{background:linear-gradient(135deg,#f1f0ff,#e4e1ff);border-color:#d5d0f5}.card-cyan{background:linear-gradient(135deg,#ebfbfb,#d7f2f2);border-color:#c4e8e8}.card-green{background:linear-gradient(135deg,#eefaf2,#dcf4e5);border-color:#c7e8d2}.card-purple{background:linear-gradient(135deg,#f7f0ff,#eadcff);border-color:#ddcef2}
+.card strong,.overview-card strong{display:block;text-align:center}
+.symbol-allocation-card .allocation-limit-note{display:block;margin-top:6px;color:var(--muted);font-size:11px}
+.section-icon{display:inline-flex;width:28px;height:28px;border-radius:8px;align-items:center;justify-content:center;background:#eaf4ff;color:#1769c2;margin-left:5px}
+.portfolio-assets{display:flex;justify-content:center;align-items:center;gap:18px;margin:12px 0 4px;padding:11px 14px;border-radius:12px;background:#f4f8fc;border:1px solid #e0e9f2}.portfolio-assets span{color:var(--muted);font-size:12px}.portfolio-assets strong{font-size:17px}
+@media(max-width:1200px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.cards{grid-template-columns:1fr 1fr}.card-icon{width:30px;height:30px}}
+.overview-card{min-width:0}
