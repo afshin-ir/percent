@@ -47,14 +47,14 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .portfolio-summary{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
 .portfolio-summary-line{display:flex;align-items:baseline;justify-content:flex-start;gap:7px;direction:rtl;font-size:18px;line-height:1.6}
 .portfolio-summary-line span{font-weight:700;color:var(--ink)}
-.portfolio-summary-line strong{font-size:18px;font-weight:400;direction:ltr;unicode-bidi:plaintext}
+.portfolio-summary-line strong{font-size:15px;font-weight:400;direction:ltr;unicode-bidi:plaintext}
 .portfolio-summary-line b{font-size:15px;color:var(--muted);font-weight:600}
 .cash-field{font-size:13px;font-weight:600}
 .cash-field input{width:240px;font-size:18px;font-weight:400;padding:10px 12px}
-@media(max-width:700px){.portfolio-summary-line{font-size:16px}.portfolio-summary-line strong{font-size:18px}.cash-field input{width:100%;font-size:17px}}
+@media(max-width:700px){.portfolio-summary-line{font-size:16px}.portfolio-summary-line strong{font-size:15px}.cash-field input{width:100%;font-size:17px}}
 
 /* نسخه ۴٫۱۰٫۴ — آیکون‌های قدرت خرید و دارایی کل */
-.portfolio-line-icon{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:7px;margin-left:5px;font-style:normal;font-size:11px;vertical-align:-2px}
+.portfolio-line-icon{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:9px;margin-left:5px;font-style:normal;font-size:15px;vertical-align:-7px}
 .icon-buying-power{background:#e8f4ff;color:#1976c9}
-.icon-total-assets{background:#e9f8ef;color:#24935b;font-size:12px}
-@media(max-width:700px){.portfolio-summary-line strong{font-size:17px}}
+.icon-total-assets{background:#e9f8ef;color:#24935b;font-size:16px}
+@media(max-width:700px){.portfolio-summary-line strong{font-size:15px}}
