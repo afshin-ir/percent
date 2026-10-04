@@ -58,3 +58,11 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .icon-buying-power{background:#e8f4ff;color:#1976c9}
 .icon-total-assets{background:#e9f8ef;color:#24935b;font-size:16px}
 @media(max-width:700px){.portfolio-summary-line strong{font-size:15px}}
+
+
+/* نسخه ۴٫۱۰٫۶ — ترتیب Tab و هماهنگی اندازهٔ اعداد */
+.portfolio-summary-line strong{font-size:15px;font-weight:400}
+.cash-field input{font-size:15px;font-weight:400}
+.portfolio-line-icon{width:34px;height:34px;border-radius:10px;margin-left:6px;font-size:20px;line-height:1;vertical-align:-9px;background:#fff;box-shadow:0 2px 7px rgba(35,55,80,.10)}
+.icon-buying-power{background:#e8f4ff;color:#1976c9}
+.icon-total-assets{background:#e9f8ef;color:#24935b}
