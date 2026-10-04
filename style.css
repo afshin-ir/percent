@@ -39,3 +39,5 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 @media(max-width:1200px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.cards{grid-template-columns:1fr 1fr}.card-icon{width:30px;height:30px}}
 .overview-card{min-width:0}
+
+.overview-row{cursor:grab}.overview-row.dragging{opacity:.45}.overview-row.drag-over td{border-top:2px solid var(--blue)}.overview-drag-handle{display:inline-block;color:#9aa3ad;cursor:grab;letter-spacing:-3px;margin-left:7px;vertical-align:middle}.overview-symbol{border:0;background:transparent;color:var(--blue);padding:2px 4px;font-weight:700;cursor:pointer}.overview-symbol:hover{background:#eef5fc}
