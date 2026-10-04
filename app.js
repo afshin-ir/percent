@@ -11,13 +11,14 @@ function renderSymbols(){const el=$("#symbolList");el.innerHTML="";(app.symbolOr
     b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span><span class="symbol-share ${over?"negative":""}">${item?.share===null||item?.share===undefined?"—":dashboardPct(item.share)}</span>`;b.onclick=()=>switchSymbol(name);b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbols();saveApp()};el.appendChild(b)})}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function switchSymbol(name){activeSymbol=name;sortRows();renderSymbols();render();saveApp()}
 function addRow(data={date:"",shares:"",price:"",commission:""}){const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||id();tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?formatThousands(data.shares):"";tr.querySelector(".price").value=data.price?formatThousands(data.price):"";tr.querySelector(".commission").value=data.commission?formatThousands(data.commission):"";rowsEl.appendChild(tr);tr.querySelector(".date-input").onclick=()=>openCalendar(tr);tr.querySelector(".date-input").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(tr)}};[".shares",".price",".commission"].forEach(sel=>{const input=tr.querySelector(sel);input.oninput=()=>{syncRows();updateTableOnly()};input.onblur=()=>{input.value=formatThousands(input.value);syncRows();render();saveApp()}});tr.querySelector(".delete").onclick=()=>{const date=tr.querySelector(".jalali").value||"بدون تاریخ",sh=tr.querySelector(".shares").value||"بدون تعداد";if(!confirm(`این خرید حذف شود؟\n\nتاریخ: ${date}\nتعداد سهم: ${sh}`))return;tr.remove();syncRows();render();saveApp()};setDataFieldTabOrder()}
 function setDataFieldTabOrder(){
-  const selectors=["#currentPrice","#sellFee","#allocationLimit","#portfolioCash",".date-input",".shares",".price",".commission"];
-  const fields=[...document.querySelectorAll(selectors.join(","))].filter(el=>{
-    if(el.disabled||el.type==="hidden")return false;
-    const r=el.getBoundingClientRect();
-    return r.width>0&&r.height>0;
+  // Tab is reserved for editable numeric data-entry fields only.
+  // Keep the order dynamic so newly added purchase rows are included.
+  const fields=[...document.querySelectorAll('input')].filter(el=>{
+    if(el.disabled||el.readOnly||el.type==='hidden')return false;
+    const mode=(el.getAttribute('inputmode')||'').toLowerCase();
+    return mode==='numeric'||mode==='decimal';
   });
-  fields.forEach((el,i)=>el.tabIndex=i+1);
+  fields.forEach(el=>{el.tabIndex=0});
 }
 
 function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr")].map(tr=>({id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value)}));sortRows()}
@@ -29,24 +30,26 @@ $("#resetBtn").onclick=()=>{if(confirm("همهٔ داده‌های برنامه�
 function openChoice(title,text,cb){$("#choiceTitle").textContent=title;$("#choiceText").textContent=text;$("#choiceModal").classList.add("open");$("#choiceModal").setAttribute("aria-hidden","false");$("#jsonChoice").onclick=()=>{closeChoice();cb("json")};$("#csvChoice").onclick=()=>{closeChoice();cb("csv")}}function closeChoice(){$("#choiceModal").classList.remove("open");$("#choiceModal").setAttribute("aria-hidden","true")};$("#closeChoice").onclick=closeChoice;$("#backupBtn").onclick=()=>openChoice("پشتیبان‌گیری","فرمت فایل پشتیبان را انتخاب کنید.",kind=>kind==="json"?exportJson():exportCsv());$("#restoreBtn").onclick=()=>openChoice("بازیابی","فرمت فایل پشتیبان را انتخاب کنید.",kind=>kind==="json"?$("#importJsonFile").click():$("#importCsvFile").click());
 function exportJson(){saveApp();downloadBlob(new Blob([JSON.stringify(app,null,2)],{type:"application/json;charset=utf-8"}),"درصد-سود-بورس.json")}function csvEscape(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}function exportCsv(){const lines=[["نماد","تاریخ","تعداد سهم","قیمت","کارمزد","مبلغ خرید","قیمت پایانی سهم","کارمزد فروش","مدت (روز)","درصد سود"]];Object.entries(app.symbols).forEach(([name,s])=>{const fee=(s.fee??.12)/100;s.rows.forEach(r=>{const cost=r.shares*r.price+r.commission,d=daysBetweenJalali(r.date),p=cost&&s.price?((s.price*r.shares)*(1-fee)-cost)/cost:null;lines.push([name,r.date,r.shares,r.price,r.commission,cost,s.price,s.fee,d??"",p===null?"":(p*100).toFixed(2)])})});downloadBlob(new Blob(["\uFEFF"+lines.map(r=>r.map(csvEscape).join(",")).join("\n")],{type:"text/csv;charset=utf-8"}),"درصد-سود-بورس.csv")}function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function setupDataEntryTabOrder(){
-  document.addEventListener("keydown",e=>{
-    if(e.key!=="Tab"||e.altKey||e.ctrlKey||e.metaKey)return;
-    const target=e.target;
-    if(!(target instanceof HTMLInputElement||target instanceof HTMLSelectElement||target instanceof HTMLTextAreaElement))return;
-    if(target.type==="hidden"||target.disabled||target.closest("[hidden]"))return;
-    const fields=[...document.querySelectorAll("input,select,textarea")].filter(el=>{
-      if(el.type==="hidden"||el.disabled||el.closest("[hidden]"))return false;
-      if(el.type==="file")return false;
-      if(el.offsetParent===null)return false;
-      return el.tabIndex!==-1;
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Tab'||e.altKey||e.ctrlKey||e.metaKey)return;
+    const current=e.target;
+    if(!(current instanceof HTMLInputElement)||current.readOnly||current.disabled)return;
+    const mode=(current.getAttribute('inputmode')||'').toLowerCase();
+    if(mode!=='numeric'&&mode!=='decimal')return;
+
+    const fields=[...document.querySelectorAll('input')].filter(el=>{
+      if(el.disabled||el.readOnly||el.type==='hidden')return false;
+      const m=(el.getAttribute('inputmode')||'').toLowerCase();
+      const r=el.getBoundingClientRect();
+      return (m==='numeric'||m==='decimal')&&r.width>0&&r.height>0;
     });
-    const index=fields.indexOf(target);
+    const index=fields.indexOf(current);
     if(index<0)return;
     const next=fields[index+(e.shiftKey?-1:1)];
     if(!next)return;
     e.preventDefault();
     next.focus();
-    if(next instanceof HTMLInputElement&&next.type==="text")next.select();
+    next.select?.();
   });
 }
 setupDataEntryTabOrder();
