@@ -111,6 +111,7 @@ function renderSymbolView(){
   $("#activeSymbolTitle").textContent=activeSymbol;
   priceEl.value=s.price?formatThousands(s.price):"";
   feeEl.value=formatDecimal(s.fee??.12);
+  $("#allocationLimit").value=formatDecimal(s.allocationLimit||0);
   rowsEl.innerHTML="";
   s.rows.forEach(r=>addRow(r));
   $("#tableEmpty").style.display=s.rows.length?"none":"block";
