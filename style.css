@@ -66,3 +66,6 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .portfolio-line-icon{width:34px;height:34px;border-radius:10px;margin-left:6px;font-size:20px;line-height:1;vertical-align:-9px;background:#fff;box-shadow:0 2px 7px rgba(35,55,80,.10)}
 .icon-buying-power{background:#e8f4ff;color:#1976c9}
 .icon-total-assets{background:#e9f8ef;color:#24935b}
+
+/* نسخه ۴٫۱۰٫۹ — فاصلهٔ زمانی از اولین خرید */
+.purchase-duration{display:inline-block;margin-right:5px;padding:2px 9px;border-radius:999px;background:#e8f5e9;color:#2e7d32;font-size:.82em;font-weight:600;white-space:nowrap}
