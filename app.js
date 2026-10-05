@@ -148,7 +148,6 @@ function renderSymbolView(){
   const el=document.querySelector("#overviewView"); if(el)el.style.display="none";
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(node=>node.style.display=""));
   sortRows();
-  updatePurchasesTitle();
   const s=active();
   $("#activeSymbolTitle").textContent=activeSymbol;
   priceEl.value=s.price?formatThousands(s.price):"";
