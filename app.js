@@ -8,7 +8,20 @@ function parseJ(s){const a=faToEn(s).split("/").map(Number);if(a.length!==3||!a.
 function jalaliMonthDays(y,m){if(m<=6)return 31;if(m<=11)return 30;const a=jalaliToGregorian(y,12,1).date,b=jalaliToGregorian(y+1,1,1).date;return Math.round((b-a)/86400000)}
 function jalaliDuration(startDate,endDate=currentJalali()){const s=parseJ(startDate);if(!s)return null;let sy=s.y,sm=s.m,sd=s.d,ey=endDate.y,em=endDate.m,ed=endDate.d;if(ey<sy||(ey===sy&&(em<sm||(em===sm&&ed<sd))))return {years:0,months:0,days:0};let years=ey-sy,months=em-sm,days=ed-sd;if(days<0){months--;const pm=em===1?12:em-1;const py=em===1?ey-1:ey;days+=jalaliMonthDays(py,pm)}if(months<0){years--;months+=12}return{years,months,days}}
 function formatJalaliDuration(d){if(!d)return "";const parts=[];if(d.years)parts.push(`${enToFa(d.years)} سال`);if(d.months)parts.push(`${enToFa(d.months)} ماه`);if(d.days||!parts.length)parts.push(`${enToFa(d.days)} روز`);return parts.join(" و ")}
-function updatePurchasesTitle(){const el=$("#purchasesTitle");if(!el)return;const dates=active().rows.map(r=>parseJ(r.date)).filter(Boolean);if(!dates.length){el.innerHTML="خریدها";return}const first=dates.reduce((min,d)=>d.date<min.date?d:min);const duration=formatJalaliDuration(jalaliString(first.y,first.m,first.d));el.innerHTML=`خریدها در <span class="purchase-duration">${duration}</span>`}
+function updatePurchasesTitle(){
+  const el=$("#purchasesTitle");
+  if(!el)return;
+  const dates=active().rows.map(r=>parseJ(r.date)).filter(Boolean);
+  if(!dates.length){
+    el.innerHTML="خریدها";
+    return;
+  }
+  const first=dates.reduce((min,d)=>d.date<min.date?d:min);
+  const duration=formatJalaliDuration(
+    jalaliDuration(jalaliString(first.y,first.m,first.d))
+  );
+  el.innerHTML=`خریدها در <span class="purchase-duration">${duration}</span>`;
+}
 function jalaliString(y,m,d){return `${y}/${String(m).padStart(2,"0")}/${String(d).padStart(2,"0")}`} 
 function makeSymbol(rows=initialData,price=713145,fee=.12,allocationLimit=0){return{price,fee,allocationLimit,rows:rows.map(x=>({id:id(),date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}function normalizeApp(a){if(a?.symbols&&typeof a.symbols==="object"){const names=Array.isArray(a.symbolOrder)?a.symbolOrder.filter(n=>a.symbols[n]):Object.keys(a.symbols);Object.keys(a.symbols).forEach(n=>{if(!names.includes(n))names.push(n);const raw=a.symbols[n]||{};a.symbols[n]={price:Number(raw.price)||0,fee:raw.fee!=null?Number(raw.fee):Number(a.sellFee??.12),allocationLimit:Number(raw.allocationLimit)||0,rows:Array.isArray(raw.rows)?raw.rows.map(r=>({id:r.id||id(),date:r.date||"",shares:Number(r.shares)||0,price:Number(r.price)||0,commission:Number(r.commission)||0})):[]}});a.symbolOrder=names;a.portfolioCash=Number(a.portfolioCash)||0;a.version=4;a.ui=a.ui||{};return a}const symbols={[DEFAULT_SYMBOL]:makeSymbol()};if(a?.price!=null)symbols[DEFAULT_SYMBOL].price=+a.price||713145;if(Array.isArray(a?.rows)&&a.rows.length)symbols[DEFAULT_SYMBOL].rows=a.rows.map(r=>({id:id(),date:r.date||"",shares:+r.shares||0,price:+r.price||0,commission:+r.commission||0}));symbols[DEFAULT_SYMBOL].fee=Number(a?.fee??.12);return{version:4,activeSymbol:DEFAULT_SYMBOL,portfolioCash:0,symbolOrder:[DEFAULT_SYMBOL],ui:{chartSymbol:DEFAULT_SYMBOL},symbols}}
 function loadApp(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)return normalizeApp(v);for(const k of LEGACY_KEYS){const old=JSON.parse(localStorage.getItem(k)||"null");if(old)return normalizeApp(old)}}catch{}return normalizeApp(null)}function saveApp(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;localStorage.setItem(KEY,JSON.stringify(app))}function active(){return app.symbols[activeSymbol]}function sortRows(){active().rows.sort((a,b)=>(parseJ(b.date)?.date-parseJ(a.date)?.date)||0)}
