@@ -14,7 +14,18 @@
 <main><section class="hero-row"><div><span class="eyebrow">نماد فعال</span><div class="title-line"><h2 id="activeSymbolTitle">عیار</h2><button id="renameSymbolBtn" class="small-btn">✎ تغییر نام</button><button id="deleteSymbolBtn" class="small-btn danger-text">× حذف نماد</button></div></div></section>
 <section class="cards"><div class="card card-blue"><i class="card-icon">◉</i><span>قیمت پایانی سهم</span><strong id="currentPriceCard2">—</strong></div><div class="card card-indigo"><i class="card-icon">◷</i><span>تعداد کل سهم</span><strong id="totalShares">—</strong></div><div class="card card-cyan"><i class="card-icon">▣</i><span>مبلغ کل خرید</span><strong id="totalCost">—</strong></div><div class="card profit-card card-green"><i class="card-icon">↗</i><span>کل سود</span><strong id="totalProfit">—</strong></div><div class="card card-purple symbol-allocation-card" id="symbolAllocationCard"><i class="card-icon">%</i><span>سهم این نماد از سبد</span><strong>—</strong><small class="allocation-limit-note">سقف تعیین نشده</small></div></section>
 <section class="panel settings"><div class="section-title"><h2>تنظیمات نماد</h2><span id="lastUpdated"></span></div><div class="settings-grid"><label>قیمت پایانی سهم<input id="currentPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۷۱۳٬۱۴۵"></label><label>کارمزد فروش<div class="suffix-input"><input id="sellFee" type="text" inputmode="decimal" autocomplete="off" value="۰٫۱۲"><small>درصد</small></div></label><label>سهم این نماد از قدرت خرید<div class="suffix-input"><input id="allocationLimit" type="text" inputmode="decimal" autocomplete="off" value="۰"><small>درصد</small></div></label></div></section>
-<section class="panel chart-panel"><div class="panel-head"><div><h2>روند سود و زیان</h2><p class="muted">روند سود/زیان خریدهای این نماد بر اساس قیمت پایانی</p></div></div><div class="chart-wrap"><canvas id="profitChart"></canvas><div id="chartTooltip" class="chart-tooltip"></div><div id="chartEmpty" class="chart-empty">برای نمایش نمودار، ابتدا دادهٔ خرید یا قیمت پایانی وارد کنید.</div></div></section>
+<section class="panel monthly-profit-panel">
+  <div class="panel-head">
+    <div>
+      <h2>سود و زیان ماهانه</h2>
+      <p class="muted">سود یا زیان خریدهای هر ماه بر اساس قیمت پایانی فعلی</p>
+    </div>
+  </div>
+  <div id="monthlyProfitList" class="monthly-profit-list"></div>
+  <div id="monthlyProfitEmpty" class="chart-empty">
+    برای نمایش سود و زیان ماهانه، ابتدا دادهٔ خرید و قیمت پایانی را وارد کنید.
+  </div>
+</section>
 <section class="panel"><div class="panel-head"><div><h2 id="purchasesTitle">خریدها</h2><p class="muted">خریدهای جدید در بالای فهرست قرار می‌گیرند.</p></div><button id="addBtn" class="primary">＋ خرید جدید</button></div><div class="table-wrap"><table><thead><tr><th>تاریخ</th><th>تعداد سهم</th><th>قیمت</th><th>کارمزد</th><th>مبلغ خرید</th><th>مدت (روز)</th><th>درصد سود</th><th></th></tr></thead><tbody id="rows"></tbody></table><div id="tableEmpty" class="table-empty">هنوز خریدی برای این نماد ثبت نشده است.<br><button id="emptyAddBtn" class="primary">＋ ثبت اولین خرید</button></div></div></section>
 </main></div>
 <div id="choiceModal" class="modal" aria-hidden="true"><div class="modal-card"><h3 id="choiceTitle">انتخاب فرمت</h3><p id="choiceText" class="modal-text">فرمت موردنظر را انتخاب کنید.</p><div class="choice-actions"><button id="jsonChoice">JSON</button><button id="csvChoice">CSV</button></div><div class="modal-actions"><button id="closeChoice">انصراف</button></div></div></div>

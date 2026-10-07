@@ -74,9 +74,85 @@ setupDataEntryTabOrder();
 function bindImport(inputId,kind){$(inputId).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const text=await f.text();if(kind==="json"){const incoming=normalizeApp(JSON.parse(text));if(confirm("داده‌های فعلی با داده‌های فایل جایگزین شوند؟")){app=incoming;activeSymbol=app.activeSymbol||app.symbolOrder[0];renderSymbols();render();saveApp()}}else importCsv(text);e.target.value=""}catch(err){alert("فایل قابل خواندن نیست.")}}}bindImport("#importJsonFile","json");bindImport("#importCsvFile","csv");
 function importCsv(text){const rows=parseCsv(text.replace(/^\uFEFF/,""));if(rows.length<2)return alert("فایل CSV داده‌ای ندارد.");const h=rows[0],idx=n=>h.indexOf(n),required=["نماد","تاریخ","تعداد سهم","قیمت","کارمزد"];if(required.some(x=>idx(x)<0))return alert("ستون‌های لازم CSV پیدا نشد.");const grouped={};rows.slice(1).forEach(r=>{const name=r[idx("نماد")]?.trim()||DEFAULT_SYMBOL;(grouped[name]??=[]).push({id:id(),date:faToEn(r[idx("تاریخ")]||""),shares:num(r[idx("تعداد سهم")]),price:num(r[idx("قیمت")]),commission:num(r[idx("کارمزد")])})});Object.entries(grouped).forEach(([name,rs])=>{if(!app.symbols[name]){app.symbols[name]=makeSymbol([],0,.12);app.symbolOrder.push(name)}app.symbols[name].rows=rs});activeSymbol=Object.keys(grouped)[0]||activeSymbol;renderSymbols();render();saveApp()}
 function parseCsv(text){const out=[];let row=[],cell="",quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quote=false;else cell+=c}else if(c==='"')quote=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=""}else if(c!=='\r')cell+=c}row.push(cell);if(row.length>1||row[0])out.push(row);return out}
-function chartData(){const s=active(),items=[];s.rows.forEach(r=>{const cost=r.shares*r.price+r.commission,fee=(s.fee??.12)/100,net=r.shares*s.price*(1-fee),amount=cost&&s.price?net-cost:null,profit=cost&&s.price?amount/cost:null;if(profit!==null)items.push({name:activeSymbol,date:r.date,profit,amount})});return items}
-function drawChart(){const canvas=$("#profitChart"),empty=$("#chartEmpty"),tip=$("#chartTooltip"),items=chartData();chartPoints=[];if(!items.length){empty.style.display="grid";canvas.style.display="none";tip.style.display="none";return}empty.style.display="none";canvas.style.display="block";const dpr=devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);const pad={l:52,r:18,t:18,b:42},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,vals=items.map(x=>x.profit*100),min=Math.min(0,...vals),max=Math.max(0,...vals),span=(max-min)||1,y=v=>pad.t+(max-v)/span*ch,zero=y(0);ctx.font="11px Vazirmatn";ctx.strokeStyle="#d9e0e7";ctx.fillStyle="#727a83";ctx.textAlign="right";[min,(min+max)/2,max].forEach(v=>{ctx.beginPath();ctx.moveTo(pad.l,y(v));ctx.lineTo(w-pad.r,y(v));ctx.stroke();ctx.fillText(`${v.toLocaleString("fa-IR",{maximumFractionDigits:1})}٪`,pad.l-8,y(v)+4)});const bw=Math.min(48,Math.max(18,(cw/items.length)*.58));items.forEach((p,i)=>{const x=pad.l+(i+.5)*(cw/items.length),yy=y(p.profit*100),top=Math.min(yy,zero),height=Math.max(2,Math.abs(yy-zero));ctx.fillStyle=p.profit>=0?"#138a4b":"#c62828";ctx.fillRect(x-bw/2,top,bw,height);chartPoints.push({x:x-bw/2,y:top,w:bw,h:height,data:p});ctx.fillStyle="#727a83";ctx.textAlign="center";ctx.fillText(enToFa(p.date?p.date.slice(5):""),x,h-10)})}
-$("#profitChart").addEventListener("mousemove",e=>{const c=e.currentTarget,r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,p=chartPoints.find(q=>x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);if(!p){$("#chartTooltip").style.display="none";return}const d=p.data;const sign=d.amount>0?"+":d.amount<0?"−":"";$("#chartTooltip").innerHTML=`<strong>${escapeHtml(d.name)}</strong>${d.date?`<span>تاریخ: ${enToFa(d.date)}</span>`:""}<span class="tip-amount">مبلغ سود/زیان: <b class="${d.amount>0?"positive":d.amount<0?"negative":""}">${sign}${fmt(Math.abs(d.amount))} ریال</b></span><span class="tip-profit">درصد سود/زیان: <b class="${d.profit>0?"positive":d.profit<0?"negative":""}">${fmtPct(d.profit)}</b></span>`;const tip=$("#chartTooltip");tip.style.display="block";tip.style.left=Math.min(Math.max(8,x+12),c.clientWidth-tip.offsetWidth-8)+"px";tip.style.top=Math.min(Math.max(8,y+12),c.clientHeight-tip.offsetHeight-8)+"px"});$("#profitChart").addEventListener("mouseleave",()=>$("#chartTooltip").style.display="none");
+const JALALI_MONTHS=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+
+function monthlyProfitData(){
+  const s=active(), groups=new Map(), fee=(s.fee??.12)/100;
+  if(!s.price) return [];
+
+  s.rows.forEach(r=>{
+    const d=parseJ(r.date);
+    const shares=Number(r.shares)||0;
+    const buyPrice=Number(r.price)||0;
+    const commission=Number(r.commission)||0;
+    if(!d||shares<=0||buyPrice<=0) return;
+
+    const cost=shares*buyPrice+commission;
+    const netValue=shares*s.price*(1-fee);
+    const amount=netValue-cost;
+    const key=`${d.y}/${d.m}`;
+
+    const item=groups.get(key)||{
+      year:d.y,
+      month:d.m,
+      cost:0,
+      value:0,
+      amount:0
+    };
+
+    item.cost+=cost;
+    item.value+=netValue;
+    item.amount+=amount;
+    groups.set(key,item);
+  });
+
+  return [...groups.values()]
+    .map(item=>({
+      ...item,
+      profit:item.cost?item.amount/item.cost:null
+    }))
+    .filter(item=>item.profit!==null)
+    .sort((a,b)=>a.year-b.year||a.month-b.month);
+}
+
+function renderMonthlyProfit(){
+  const list=$("#monthlyProfitList"),empty=$("#monthlyProfitEmpty");
+  if(!list||!empty)return;
+
+  const items=monthlyProfitData();
+  list.innerHTML="";
+
+  if(!items.length){
+    list.style.display="none";
+    empty.style.display="grid";
+    return;
+  }
+
+  list.style.display="flex";
+  empty.style.display="none";
+
+  items.forEach(item=>{
+    const row=document.createElement("div");
+    row.className="monthly-profit-row";
+
+    const cls=item.profit>0?"positive":item.profit<0?"negative":"";
+    const sign=item.profit<0?"−":"";
+
+    row.innerHTML=`
+      <span class="monthly-profit-month">
+        ${JALALI_MONTHS[item.month-1]} ${enToFa(item.year)}
+      </span>
+      <strong class="${cls}">${sign}${fmtPct(Math.abs(item.profit))}</strong>
+    `;
+
+    list.appendChild(row);
+  });
+}
+
+function drawChart(){
+  renderMonthlyProfit();
+}
+
 function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".jalali").value),now=currentJalali();calendarCursor=p?{y:p.y,m:p.m}:{y:now.y,m:now.m};renderCalendar();$("#dateModal").classList.add("open");$("#dateModal").setAttribute("aria-hidden","false")}function closeCalendar(){$("#dateModal").classList.remove("open");$("#dateModal").setAttribute("aria-hidden","true");calendarTarget=null}function monthDays(y,m){return m<=6?31:m<=11?30:(jalaliToGregorian(y+1,1,1).date-jalaliToGregorian(y,12,1).date)/86400000}function renderCalendar(){const{y,m}=calendarCursor;$("#calendarTitle").textContent=`${["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"][m-1]} ${enToFa(y)}`;const first=jalaliToGregorian(y,m,1).date.getUTCDay(),offset=(first+1)%7,days=monthDays(y,m),selected=parseJ(calendarTarget?.querySelector(".jalali")?.value||""),today=currentJalali(),g=$("#calendarGrid");g.innerHTML="";for(let i=0;i<offset;i++){const e=document.createElement("button");e.className="empty";g.appendChild(e)}for(let d=1;d<=days;d++){const b=document.createElement("button");b.textContent=enToFa(d);if(today.y===y&&today.m===m&&today.d===d)b.classList.add("today");if(selected?.y===y&&selected?.m===m&&selected?.d===d)b.classList.add("selected");b.onclick=()=>selectDate(y,m,d);g.appendChild(b)}}function selectDate(y,m,d){if(!calendarTarget)return;calendarTarget.querySelector(".jalali").value=`${enToFa(y)}/${enToFa(String(m).padStart(2,"0"))}/${enToFa(String(d).padStart(2,"0"))}`;syncRows();closeCalendar();render();saveApp()}$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};$("#choiceModal").onclick=e=>{if(e.target.id==="choiceModal")closeChoice()};window.addEventListener("resize",drawChart);renderSymbols();render();
 // Dashboard patch
 const OVERVIEW_STATE_KEY = "overview";

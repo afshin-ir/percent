@@ -69,3 +69,79 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 
 /* نسخه ۴٫۱۰٫۹ — فاصلهٔ زمانی از اولین خرید */
 .purchase-duration{display:inline-block;margin-right:5px;padding:2px 9px;border-radius:999px;background:#e8f5e9;color:#2e7d32;font-size:.82em;font-weight:600;white-space:nowrap}
+
+
+/* Monthly profit list */
+.monthly-profit-panel{
+  padding:16px;
+  margin-bottom:16px;
+}
+
+.monthly-profit-list{
+  display:flex;
+  flex-direction:column;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+
+.monthly-profit-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  min-height:52px;
+  padding:10px 8px;
+  border-bottom:1px solid var(--line);
+}
+
+.monthly-profit-row:last-child{
+  border-bottom:0;
+}
+
+.monthly-profit-month{
+  color:var(--ink);
+  font-size:14px;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+}
+
+.monthly-profit-row strong{
+  min-width:90px;
+  text-align:left;
+  direction:ltr;
+  font-size:16px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
+.monthly-profit-row strong.positive{
+  color:var(--green);
+}
+
+.monthly-profit-row strong.negative{
+  color:var(--red);
+}
+
+.monthly-profit-row strong:not(.positive):not(.negative){
+  color:var(--muted);
+}
+
+.monthly-profit-panel .chart-empty{
+  min-height:96px;
+}
+
+@media (max-width:700px){
+  .monthly-profit-row{
+    min-height:48px;
+    padding:9px 6px;
+  }
+
+  .monthly-profit-month{
+    font-size:13px;
+  }
+
+  .monthly-profit-row strong{
+    min-width:78px;
+    font-size:15px;
+  }
+}
