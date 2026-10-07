@@ -119,7 +119,9 @@ function renderMonthlyProfit(){
   const list=$("#monthlyProfitList"),empty=$("#monthlyProfitEmpty");
   if(!list||!empty)return;
 
-  const items=monthlyProfitData();
+  const items=monthlyProfitData()
+    .sort((a,b)=>b.year-a.year||b.month-a.month);
+
   list.innerHTML="";
 
   if(!items.length){
@@ -137,12 +139,23 @@ function renderMonthlyProfit(){
 
     const cls=item.profit>0?"positive":item.profit<0?"negative":"";
     const sign=item.profit<0?"−":"";
+    const percentage=Math.abs(item.profit*100).toLocaleString("fa-IR",{
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    });
 
     row.innerHTML=`
-      <span class="monthly-profit-month">
-        ${JALALI_MONTHS[item.month-1]} ${enToFa(item.year)}
+      <span class="monthly-profit-label">
+        <span class="monthly-profit-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M7 3v3M17 3v3M4.5 9.5h15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <rect x="4" y="5" width="16" height="15" rx="3" stroke="currentColor" stroke-width="1.8"/>
+            <path d="m9 15 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>${JALALI_MONTHS[item.month-1]} ${enToFa(item.year)}:</span>
       </span>
-      <strong class="${cls}">${sign}${fmtPct(Math.abs(item.profit))}</strong>
+      <strong class="${cls}">${sign}${percentage}٪</strong>
     `;
 
     list.appendChild(row);
