@@ -69,6 +69,3 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 
 /* نسخه ۴٫۱۰٫۹ — فاصلهٔ زمانی از اولین خرید */
 .purchase-duration{display:inline-block;margin-right:5px;padding:2px 9px;border-radius:999px;background:#e8f5e9;color:#2e7d32;font-size:.82em;font-weight:600;white-space:nowrap}
-
-/* سود و زیان ماهانه به‌جای نمودار */
-.monthly-profit-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.monthly-profit-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe}.monthly-profit-month{font-size:13px;color:#505963}.monthly-profit-row strong{font-size:16px;font-variant-numeric:tabular-nums}.monthly-profit-row .positive{color:var(--green)!important}.monthly-profit-row .negative{color:var(--red)!important}
