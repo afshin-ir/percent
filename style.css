@@ -79,3 +79,5 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .trade-kind{font-weight:700;color:#2563a5}.sale-tr td:first-child{font-weight:700;color:#b45309}.buy-edit{border:1px solid #bfdbfe;border-radius:6px;background:#eff6ff;color:#1d4ed8;padding:4px 7px;margin-inline-end:5px;cursor:pointer}
 
 .trade-filter-label{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#46576b;white-space:nowrap}.trade-filter-label select{font:inherit;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#263648;padding:9px 10px;cursor:pointer;max-width:170px}.trade-filter-label select:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+
+.chart-periods{display:flex;gap:5px;flex-wrap:wrap;direction:rtl}.chart-periods button{border:1px solid #d5e0ed;border-radius:8px;padding:6px 12px;background:#fff;color:#4c5e70;cursor:pointer;font-family:inherit;font-size:12px}.chart-periods button.active{background:#e6f1ff;border-color:#77a9dd;color:#145c9f;font-weight:700}@media(max-width:700px){.chart-panel .panel-head{align-items:flex-start;flex-direction:column;gap:10px}.chart-wrap{height:285px}}
