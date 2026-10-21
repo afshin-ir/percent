@@ -73,3 +73,9 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .trade-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sell-button{border:1px solid #c24141;background:#fff0f0;color:#b42323;border-radius:8px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}.sell-button:hover{background:#ffe0e0}.sales-panel{margin-top:16px}.sales-panel td,.sales-panel th{padding:10px}.sale-delete{color:#c62828;background:none;border:0;cursor:pointer;font:inherit}
 
 .realized-summary{font-weight:700;margin-inline-start:18px}.sales-panel .panel-head{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+
+.sale-modal-card{max-width:480px;width:min(94vw,480px)}.sale-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.sale-form label{display:flex;flex-direction:column;gap:7px;font-size:13px}.sale-form input,.sale-date-button{width:100%;min-height:40px;border:1px solid #d2dbe6;border-radius:8px;padding:8px;background:white;color:#253344;text-align:center}.sale-label{display:inline-block;color:#bd3636;font-weight:700;margin-right:8px}.sale-tr{background:#fff7f5}.sale-tr td{border-bottom:1px solid #f0dcd8}.sale-edit{margin-inline-end:8px}#saleError:empty{display:none}@media(max-width:540px){.sale-form{grid-template-columns:1fr}}
+
+.trade-kind{font-weight:700;color:#2563a5}.sale-tr td:first-child{font-weight:700;color:#b45309}.buy-edit{border:1px solid #bfdbfe;border-radius:6px;background:#eff6ff;color:#1d4ed8;padding:4px 7px;margin-inline-end:5px;cursor:pointer}
+
+.trade-filter-label{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#46576b;white-space:nowrap}.trade-filter-label select{font:inherit;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#263648;padding:9px 10px;cursor:pointer;max-width:170px}.trade-filter-label select:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
