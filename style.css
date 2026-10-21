@@ -121,3 +121,16 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .overview-sort-button.is-active .overview-sort-indicator{color:#15966c;opacity:1;font-size:12px;line-height:14px}
 .overview-sort-button.is-active{color:#415b72;background:#e3eff5}
 .overview-sort-button.is-active:hover{background:#dceaf7}
+
+/* یکپارچه‌سازی مدیریت نمادها در جدول نمای کلی */
+.app-shell{display:block;direction:rtl;max-width:1550px}
+.app-shell>main{width:100%}
+#symbolList[hidden]{display:none!important}
+.overview-panel>.panel-head{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px}
+.overview-add-symbol{display:inline-grid;place-items:center;flex:none;width:38px;height:38px;font-size:24px;line-height:1;border:1px solid #cbd8e7;border-radius:10px;background:#fff;color:#1769c2;cursor:pointer}
+.overview-add-symbol:hover{background:#eaf3ff;border-color:#9dbfe8}
+.overview-delete-symbol{border:0;background:transparent;color:#9ba4b1;border-radius:6px;font-size:19px;line-height:1;padding:3px 7px;margin-right:6px;vertical-align:middle;cursor:pointer;opacity:.65}
+.overview-delete-symbol:hover,.overview-delete-symbol:focus-visible{color:#b42318;background:#fff0f0;opacity:1}
+.overview-table tbody tr:hover .overview-delete-symbol{opacity:1}
+.back-overview{white-space:nowrap;color:#1769c2}
+@media(max-width:700px){.overview-panel>.panel-head{flex-direction:row;align-items:center}}
