@@ -84,3 +84,10 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 
 /* Brokerage import: inline review, no blocking modal */
 .broker-import{margin:14px auto;max-width:1180px;padding:20px}.broker-import[hidden]{display:none}.broker-mapping{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:15px 0}.broker-mapping label{display:flex;flex-direction:column;gap:5px;font-size:12px}.broker-mapping select{max-width:100%;padding:9px;border:1px solid #ccd7e4;border-radius:8px;background:white}.broker-preview{width:100%;font-size:12px}.broker-preview td,.broker-preview th{padding:9px}.broker-actions{display:flex;gap:12px;margin-top:15px;flex-wrap:wrap}.broker-import .import-bad{color:#bb2424}.broker-import .import-good{color:#13864c}.broker-import .import-warn{color:#a36a00}
+/* Finance dashboard: responsive, RTL and legible */
+.finance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 16px}
+.finance-stat{background:var(--panel,#f7f9fc);border:1px solid var(--line,#dfe6ee);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.finance-stat span{font-size:13px;font-weight:700}.finance-stat strong{font-size:18px;overflow-wrap:anywhere;direction:ltr;unicode-bidi:plaintext;text-align:right}.finance-stat small{color:var(--muted);font-size:11px}
+.finance-inputs{display:flex;flex-wrap:wrap;gap:12px}.finance-inputs .cash-field{display:flex;flex-direction:column;gap:5px;flex:1 1 205px;align-items:stretch}.finance-inputs input{max-width:100%;box-sizing:border-box}
+.cash-actions{display:flex;gap:8px;flex-wrap:wrap}.cash-ledger-details[hidden]{display:none!important}
+@media(max-width:700px){.finance-grid{grid-template-columns:1fr}.finance-stat strong{font-size:16px}}
