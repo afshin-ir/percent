@@ -234,3 +234,43 @@ body>header,body>header:is(:hover,:focus-within){position:fixed!important;inset-
 .overview-symbol-layout .overview-delete-symbol:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 @media(hover:none),(pointer:coarse){.overview-symbol-layout .overview-delete-symbol{opacity:1}}
 @media(max-width:700px){.overview-top .overview-card strong,.overview-top .overview-card strong .dashboard-signed{font-size:16px!important}}
+
+/* v013: داشبورد متوازن و نمودارهای مبتنی بر داده‌های واقعی */
+#overviewView{gap:14px}
+#overviewView .overview-top{padding:20px!important}
+#overviewView .overview-primary-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 12px}
+#overviewView .overview-secondary-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}
+#overviewView .overview-primary-cards .overview-card{min-height:142px!important;background:#fff!important;border:1px solid #e0e9f2!important}
+#overviewView .overview-primary-cards .overview-assets-card{background:#eef6ff!important;border-color:#cfe2fa!important}
+#overviewView .overview-primary-cards .overview-assets-card strong{color:#15518b!important}
+#overviewView .overview-secondary-cards .overview-card{min-height:102px!important;background:#fafcff!important;border:1px solid #e4ebf4!important}
+#overviewView .overview-card.positive strong,#overviewView .overview-card.positive strong .dashboard-signed{color:var(--green)!important}
+#overviewView .overview-card.negative strong,#overviewView .overview-card.negative strong .dashboard-signed{color:var(--red)!important}
+#overviewView .overview-buying-card label{font-size:12px;color:#64748b}
+#overviewView .overview-buying-card input{width:min(100%,230px);height:39px;margin:9px auto 0;font-size:17px;direction:ltr;text-align:center;background:#fff}
+#overviewView .overview-buying-card small{color:#7b8896;font-size:10px;margin-top:4px}
+#overviewView .overview-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+#overviewView .overview-chart-panel{min-width:0;margin:0!important;padding:20px!important;border-radius:17px;box-shadow:0 3px 15px rgba(35,55,80,.04)}
+#overviewView .overview-chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+#overviewView .overview-chart-head h2{font-size:18px;margin:0}
+#overviewView .overview-chart-head p{font-size:11px;color:var(--muted);margin:4px 0}
+#overviewView .overview-chart-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#overviewView .overview-chart-controls label{font-size:11px;color:var(--muted)}
+#overviewView .overview-chart-controls select{max-width:125px;padding:6px 8px;font-size:12px}
+#overviewView .overview-donut-layout{display:flex;align-items:center;justify-content:center;gap:26px;min-height:230px}
+#overviewView .overview-donut{width:208px;height:208px;border-radius:50%;flex:none;display:grid;place-items:center}
+#overviewView .overview-donut-hole{width:142px;height:142px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;text-align:center;padding:8px;box-shadow:0 0 0 2px rgba(255,255,255,.75)}
+#overviewView .overview-donut-hole small{font-size:10px;color:#6b7785}
+#overviewView .overview-donut-hole strong{font-size:16px;max-width:100%;overflow-wrap:anywhere;line-height:1.6}
+#overviewView .overview-allocation-legend{list-style:none;margin:0;padding:0;flex:1;min-width:100px;max-width:230px;display:flex;flex-direction:column;gap:9px}
+#overviewView .overview-allocation-legend li{display:flex;align-items:center;gap:7px;font-size:12px}
+#overviewView .overview-allocation-legend b{margin-inline-start:auto;font-weight:600;white-space:nowrap}
+#overviewView .allocation-key{width:10px;height:10px;border-radius:50%;flex:none}
+#overviewView .allocation-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#overviewView .overview-monthly-svg{display:block;width:100%;height:auto;max-height:240px;overflow:visible}
+#overviewView .overview-monthly-svg text{font-family:Vazirmatn,Tahoma,sans-serif;font-size:11px;fill:#728094}
+#overviewView .overview-chart-note{font-size:10px;color:#7b8796;line-height:1.9;margin:8px 0 0}
+#overviewView .overview-chart-empty{display:grid;place-items:center;min-height:210px;text-align:center;color:#788492;font-size:12px;line-height:2;padding:15px}
+@media(max-width:1100px){#overviewView .overview-primary-cards{grid-template-columns:repeat(2,minmax(0,1fr))}#overviewView .overview-donut-layout{gap:13px}#overviewView .overview-donut{width:165px;height:165px}#overviewView .overview-donut-hole{width:112px;height:112px}#overviewView .overview-donut-hole strong{font-size:12px}}
+@media(max-width:780px){#overviewView .overview-chart-grid{grid-template-columns:1fr}#overviewView .overview-secondary-cards{grid-template-columns:repeat(2,minmax(0,1fr))}#overviewView .overview-donut{width:195px;height:195px}#overviewView .overview-donut-hole{width:130px;height:130px}}
+@media(max-width:500px){#overviewView .overview-top{padding:13px!important}#overviewView .overview-primary-cards,#overviewView .overview-secondary-cards{gap:8px}#overviewView .overview-primary-cards .overview-card{min-height:124px!important}#overviewView .overview-secondary-cards .overview-card{min-height:102px!important}#overviewView .overview-chart-panel{padding:13px!important}#overviewView .overview-donut-layout{gap:12px}#overviewView .overview-donut{width:145px;height:145px}#overviewView .overview-donut-hole{width:98px;height:98px}#overviewView .overview-donut-hole strong{font-size:11px}#overviewView .overview-allocation-legend li{font-size:11px}#overviewView .overview-chart-head{margin-bottom:12px}}
