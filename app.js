@@ -99,6 +99,7 @@ function monthlyChartData(){
  return [...byMonth.values()].sort((a,b)=>a.monthIndex-b.monthIndex);
 }
 function drawChart(){
+ recordPriceSnapshot();
  const canvas=$("#profitChart"),empty=$("#chartEmpty"),tip=$("#chartTooltip"),items=monthlyChartData();chartPoints=[];
  if(!canvas||!empty)return;
  if(!items.length){empty.textContent='برای این نماد هنوز سابقۀ معتبر قیمت پس از اولین خرید ثبت نشده است. قیمت پایانی را ثبت کنید تا ماه جاری نمایش داده شود.';empty.style.display='grid';canvas.style.display='none';tip.style.display='none';return}
@@ -121,7 +122,7 @@ $("#profitChart").addEventListener('mouseleave',()=>$("#chartTooltip").style.dis
 function setChartPeriod(value){app.ui=app.ui||{};app.ui.chartPeriod=Number(value);document.querySelectorAll('[data-chart-period]').forEach(b=>{const selected=Number(b.dataset.chartPeriod)===app.ui.chartPeriod;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});drawChart();saveApp()}
 document.querySelectorAll('[data-chart-period]').forEach(b=>b.addEventListener('click',()=>setChartPeriod(b.dataset.chartPeriod)));
 setChartPeriod(app.ui?.chartPeriod||6);
-function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".jalali").value),now=currentJalali();calendarCursor=p?{y:p.y,m:p.m}:{y:now.y,m:now.m};renderCalendar();$("#dateModal").classList.add("open");$("#dateModal").setAttribute("aria-hidden","false")}function closeCalendar(){$("#dateModal").classList.remove("open");$("#dateModal").setAttribute("aria-hidden","true");calendarTarget=null}function monthDays(y,m){return m<=6?31:m<=11?30:(jalaliToGregorian(y+1,1,1).date-jalaliToGregorian(y,12,1).date)/86400000}function renderCalendar(){const{y,m}=calendarCursor;$("#calendarTitle").textContent=`${["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"][m-1]} ${enToFa(y)}`;const first=jalaliToGregorian(y,m,1).date.getUTCDay(),offset=(first+1)%7,days=monthDays(y,m),selected=parseJ(calendarTarget?.querySelector(".jalali")?.value||""),today=currentJalali(),g=$("#calendarGrid");g.innerHTML="";for(let i=0;i<offset;i++){const e=document.createElement("button");e.className="empty";g.appendChild(e)}for(let d=1;d<=days;d++){const b=document.createElement("button");b.textContent=enToFa(d);if(today.y===y&&today.m===m&&today.d===d)b.classList.add("today");if(selected?.y===y&&selected?.m===m&&selected?.d===d)b.classList.add("selected");b.onclick=()=>selectDate(y,m,d);g.appendChild(b)}}function selectDate(y,m,d){if(!calendarTarget)return;calendarTarget.querySelector(".jalali").value=`${enToFa(y)}/${enToFa(String(m).padStart(2,"0"))}/${enToFa(String(d).padStart(2,"0"))}`;if(calendarTarget.classList.contains("sale-tr"))syncSaleRow(calendarTarget);else syncRows();closeCalendar();render();saveApp()}$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};$("#choiceModal").onclick=e=>{if(e.target.id==="choiceModal")closeChoice()};window.addEventListener("resize",drawChart);renderSymbols();render();
+function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".jalali").value),now=currentJalali();calendarCursor=p?{y:p.y,m:p.m}:{y:now.y,m:now.m};renderCalendar();$("#dateModal").classList.add("open");$("#dateModal").setAttribute("aria-hidden","false")}function closeCalendar(){$("#dateModal").classList.remove("open");$("#dateModal").setAttribute("aria-hidden","true");calendarTarget=null}function monthDays(y,m){return m<=6?31:m<=11?30:(jalaliToGregorian(y+1,1,1).date-jalaliToGregorian(y,12,1).date)/86400000}function renderCalendar(){const{y,m}=calendarCursor;$("#calendarTitle").textContent=`${["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"][m-1]} ${enToFa(y)}`;const first=jalaliToGregorian(y,m,1).date.getUTCDay(),offset=(first+1)%7,days=monthDays(y,m),selected=parseJ(calendarTarget?.querySelector(".jalali")?.value||""),today=currentJalali(),g=$("#calendarGrid");g.innerHTML="";for(let i=0;i<offset;i++){const e=document.createElement("button");e.className="empty";g.appendChild(e)}for(let d=1;d<=days;d++){const b=document.createElement("button");b.textContent=enToFa(d);if(today.y===y&&today.m===m&&today.d===d)b.classList.add("today");if(selected?.y===y&&selected?.m===m&&selected?.d===d)b.classList.add("selected");b.onclick=()=>selectDate(y,m,d);g.appendChild(b)}}function selectDate(y,m,d){if(!calendarTarget)return;calendarTarget.querySelector(".jalali").value=`${enToFa(y)}/${enToFa(String(m).padStart(2,"0"))}/${enToFa(String(d).padStart(2,"0"))}`;if(calendarTarget.classList.contains("sale-tr"))syncSaleRow(calendarTarget);else syncRows();closeCalendar();render();saveApp()}$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};$("#choiceModal").onclick=e=>{if(e.target.id==="choiceModal")closeChoice()};window.addEventListener("resize",drawChart);renderSymbols();render();saveApp();
 // Dashboard patch
 const OVERVIEW_STATE_KEY = "overview";
 let overviewMode = !!app.ui?.overview;
@@ -136,6 +137,8 @@ function costLedger(symbol){
  events.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(a.kind==='buy'?-1:1)||a.seq-b.seq);
  let shares=0,cost=0,realized=0,valid=true;const bySale={},byTrade={};
  for(const e of events){const q=Number(e.shares),p=Number(e.price),fee=Number(e.commission);
+  // Completely empty transaction rows are drafts, not invalid historical trades.
+  if(!q&&!p&&!fee)continue;
   if(!parseJ(e.date)||!Number.isInteger(q)||q<=0||!Number.isFinite(p)||p<=0||!Number.isFinite(fee)||fee<0){valid=false;continue}
   if(e.kind==='buy'){shares+=q;cost+=q*p+fee}
   else {if(q>shares){valid=false;continue}const basis=cost*q/shares,net=q*p-fee,gain=net-basis;
@@ -309,12 +312,12 @@ function syncSaleRow(tr,validate=true){
 function renderCombinedTrades(){
  const symbol=active(),ledger=costLedger(symbol),body=rowsEl;
  body.querySelectorAll('tr.sale-tr').forEach(x=>x.remove());
- body.querySelectorAll('tr:not(.sale-tr)').forEach(tr=>{const state=ledger.byTrade['buy:'+tr.dataset.id];tr.querySelector('.balance-shares').textContent=state?fmt(state.shares):'—';tr.querySelector('.average-cost').textContent=state&&state.shares?fmt(state.average):'—'});
+
  for(const sale of symbol.sales||[]){const tr=saleRow(sale),info=ledger.bySale[sale.id],state=ledger.byTrade['sell:'+sale.id];
   tr.querySelector('.cost').textContent=info?fmt(info.net):'—';tr.querySelector('.days').textContent=enToFa(daysBetweenJalali(sale.date)??'—');
   const pct=tr.querySelector('.profit'),amount=tr.querySelector('.gain-amount');pct.textContent=info?fmtPct(info.pct):'—';amount.textContent=info?(info.gain>0?'+':'')+fmt(info.gain):'—';
   for(const el of [pct,amount]){el.classList.toggle('negative',!!info&&info.gain<0);el.classList.toggle('positive',!!info&&info.gain>0)}
-  tr.querySelector('.balance-shares').textContent=state?fmt(state.shares):'—';tr.querySelector('.average-cost').textContent=state&&state.shares?fmt(state.average):'—';body.appendChild(tr);
+  body.appendChild(tr);
  }
  [...body.querySelectorAll('tr')].sort((a,b)=>{const date=tr=>faToEn(tr.querySelector('.jalali')?.value||'');return date(b).localeCompare(date(a))}).forEach(tr=>body.appendChild(tr));
  updatePurchasesTitle();$('#tableEmpty').style.display=(symbol.rows.length+(symbol.sales||[]).length)?'none':'block';applyTradeFilter();
