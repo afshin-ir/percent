@@ -201,16 +201,47 @@ function portfolioData(){
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
 }
+// مرتب‌سازی صرفاً نمایشی است؛ ترتیب دلخواه نمادها را تغییر نمی‌دهد.
+let overviewSort={key:null,direction:1};
+const overviewSortColumns=[
+  {key:"name",label:"نماد",tip:"نام نماد بورسی"},
+  {key:"totalShares",label:"تعداد",tip:"تعداد سهام باقی‌مانده پس از کسر فروش‌ها"},
+  {key:"cost",label:"بهای خرید",tip:"بهای تمام‌شدۀ سهام باقی‌مانده، با احتساب کارمزد خرید"},
+  {key:"value",label:"ارزش فعلی",tip:"تعداد سهام باقی‌مانده ضرب‌در قیمت پایانی ثبت‌شده"},
+  {key:"profit",label:"تحقق‌نیافته",tip:"سود یا زیان سهامی که هنوز فروخته نشده‌اند، با کسر کارمزد فروش احتمالی"},
+  {key:"realized",label:"تحقق‌یافته",tip:"سود یا زیان حاصل از فروش‌های ثبت‌شده، پس از کسر کارمزد واقعی"},
+  {key:"ret",label:"بازدهی",tip:"درصد سود یا زیان تحقق‌نیافته نسبت به بهای تمام‌شدۀ سهام باقی‌مانده"},
+  {key:"share",label:"سهم از سبد",tip:"نسبت بهای تمام‌شدۀ سهام نماد به مجموع بهای تمام‌شدۀ سهام و قدرت خرید دستی"}
+];
+function overviewCompare(a,b,key){
+  const x=a[key],y=b[key];
+  if(x===null||x===undefined)return y===null||y===undefined?0:1;
+  if(y===null||y===undefined)return -1;
+  return key==="name"?x.localeCompare(y,"fa"):x-y;
+}
 function renderOverview(){const salesPanel=document.querySelector("#salesPanel");if(salesPanel)salesPanel.style.display="none";
   const d=portfolioData();
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display="none"));
   let el=document.querySelector("#overviewView");
   if(!el){el=document.createElement("section");el.id="overviewView";mainRoot.appendChild(el)}
   const orderedItems=(app.symbolOrder||Object.keys(app.symbols)).map(name=>d.items.find(x=>x.name===name)).filter(Boolean);
+  if(overviewSort.key){
+    const key=overviewSort.key,dir=overviewSort.direction;
+    orderedItems.sort((a,b)=>{
+      const missingA=a[key]===null||a[key]===undefined,missingB=b[key]===null||b[key]===undefined;
+      if(missingA!==missingB)return missingA?1:-1;
+      return overviewCompare(a,b,key)*dir;
+    });
+  }
+  const headerCells=overviewSortColumns.map(c=>{
+    const selected=overviewSort.key===c.key;
+    const symbol=selected?(overviewSort.direction===1?"▲":"▼"):"↕";
+    return `<th scope="col" aria-sort="${selected?(overviewSort.direction===1?"ascending":"descending"):"none"}"><button type="button" class="overview-sort-button ${selected?"is-active":""}" data-sort="${c.key}" title="${c.tip}؛ برای مرتب‌سازی کلیک کنید" aria-label="مرتب‌سازی بر اساس ${c.label}: ${c.tip}"><span>${c.label}</span><span class="overview-sort-indicator" aria-hidden="true">${symbol}</span></button></th>`;
+  }).join("");
   const rows=orderedItems.map(x=>{
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
     const over=x.share!==null&&x.allocationLimit>0&&x.share*100>x.allocationLimit;
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="true"><td><span class="overview-drag-handle" title="برای جابه‌جایی بکشید">⋮⋮</span><button class="overview-symbol" type="button">${escapeHtml(x.name)}</button></td><td>${dashboardNumber(x.totalShares)}</td><td>${dashboardValue(x.cost)}</td><td>${dashboardValue(x.value)}</td><td class="${profitClass}">${x.profit===null?"—":(x.profit>0?"+":"")+dashboardNumber(x.profit)}</td><td>${dashboardNumber(x.realized)}</td><td class="${profitClass}">${x.ret===null?"—":dashboardPct(x.ret)}</td><td class="${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}">⋮⋮</span><button class="overview-symbol" type="button">${escapeHtml(x.name)}</button></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${x.profit===null?"—":(x.profit>0?"+":"")+dashboardNumber(x.profit)}</td><td class="overview-numeric">${dashboardNumber(x.realized)}</td><td class="overview-numeric ${profitClass}">${x.ret===null?"—":dashboardPct(x.ret)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
   }).join("");
   const totalCombined=d.profit===null?null:d.profit+d.realized;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
@@ -232,7 +263,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
       </div>
     </section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
-    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>تحقق‌نیافته</th><th>تحقق‌یافته</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
   const brokerInput=$("#brokerBuyingPower");
   brokerInput.oninput=()=>{
     app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;
@@ -244,6 +275,13 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     saveApp();
   };
   setDataFieldTabOrder();
+  el.querySelectorAll(".overview-sort-button").forEach(button=>{
+    button.onclick=()=>{
+      const key=button.dataset.sort;
+      overviewSort=overviewSort.key===key?(overviewSort.direction===-1?{key:null,direction:1}:{key,direction:-1}):{key,direction:1};
+      renderOverview();
+    };
+  });
   el.querySelectorAll(".overview-row").forEach(row=>{
     row.onclick=e=>{if(e.target.closest("button")){overviewMode=false;activeSymbol=row.dataset.symbol;app.ui.overview=false;renderSymbols();render();saveApp()}};
     row.ondragstart=e=>{e.dataTransfer.setData("text/plain",row.dataset.symbol);row.classList.add("dragging")};

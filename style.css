@@ -98,3 +98,18 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .simple-finance-grid .finance-stat label{font-weight:700;font-size:13px}
 .simple-finance-grid input{width:100%;max-width:330px;padding:10px 12px;font-size:17px;margin:8px 0 3px;direction:ltr;text-align:right}
 @media(max-width:700px){.simple-finance-grid{grid-template-columns:1fr}}
+
+/* خلاصۀ نمادها: خوانایی، مرتب‌سازی و توضیح عنوان‌ها */
+.overview-table{font-variant-numeric:tabular-nums}
+.overview-table th{background:#e8f0f8;border-top-color:#d6e2ee;padding:0;color:#415b72}
+.overview-table td{padding:13px 12px;line-height:1.75;vertical-align:middle}
+.overview-table tbody tr:nth-child(even){background:#fbfcfe}
+.overview-table tbody tr:hover{background:#f1f7fd}
+.overview-table .overview-numeric{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;white-space:nowrap}
+.overview-table .overview-symbol{font-size:13px}
+.overview-sort-button{width:100%;border:0;border-radius:0;background:transparent;color:inherit;display:inline-flex;justify-content:center;align-items:center;gap:7px;padding:12px 10px;font-weight:700;font-size:12px;white-space:nowrap}
+.overview-sort-button:hover{background:#dceaf7}
+.overview-sort-button:focus-visible{outline:2px solid var(--blue);outline-offset:-3px}
+.overview-sort-button.is-active{color:#115caa;background:#dceafa}
+.overview-sort-indicator{font-size:10px;opacity:.55}
+.overview-sort-button.is-active .overview-sort-indicator{opacity:1}
