@@ -91,3 +91,10 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .finance-inputs{display:flex;flex-wrap:wrap;gap:12px}.finance-inputs .cash-field{display:flex;flex-direction:column;gap:5px;flex:1 1 205px;align-items:stretch}.finance-inputs input{max-width:100%;box-sizing:border-box}
 .cash-actions{display:flex;gap:8px;flex-wrap:wrap}.cash-ledger-details[hidden]{display:none!important}
 @media(max-width:700px){.finance-grid{grid-template-columns:1fr}.finance-stat strong{font-size:16px}}
+
+/* نمای سادهٔ دارایی و قدرت خرید */
+.simple-finance-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.simple-finance-grid .finance-stat{min-width:0}
+.simple-finance-grid .finance-stat label{font-weight:700;font-size:13px}
+.simple-finance-grid input{width:100%;max-width:330px;padding:10px 12px;font-size:17px;margin:8px 0 3px;direction:ltr;text-align:right}
+@media(max-width:700px){.simple-finance-grid{grid-template-columns:1fr}}

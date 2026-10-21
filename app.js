@@ -188,16 +188,15 @@ function portfolioData(){
     shares+=totalShares; purchases+=rows.length; investment+=cost; if(value!==null) current+=value;
     items.push({name,totalShares,purchases,cost,value,profit,ret,realized:ledger.realized,allocationLimit:Number(s.allocationLimit)||0});
   });
-  const cashBalance=effectiveCash();
   const buyingPower=app.brokerBuyingPower;
-  const portfolioBasis=investment+cashBalance;
+  const portfolioBasis=investment+(buyingPower??0);
   items.forEach(x=>x.share=portfolioBasis>0?x.cost/portfolioBasis:null);
   const priced=items.filter(x=>x.value!==null);
   const totalProfit=priced.length?items.reduce((sum,x)=>sum+(x.profit??0),0):null;
   const totalRet=totalProfit!==null&&investment?totalProfit/investment:null;
-  const totalAssets=items.every(x=>x.value!==null||x.totalShares===0)?current+cashBalance:null;
+  const totalAssets=buyingPower!==null&&items.every(x=>x.value!==null||x.totalShares===0)?current+buyingPower:null;
   const realized=items.reduce((sum,x)=>sum+x.realized,0);
-  return {items,shares,purchases,investment,realized,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,portfolioCash:cashBalance,buyingPower,totalAssets,brokerDifference:buyingPower===null?null:buyingPower-cashBalance};
+  return {items,shares,purchases,investment,realized,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,buyingPower,totalAssets};
 }
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
@@ -225,20 +224,25 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
       <div class="overview-card card-green"><span>سود/زیان تحقق‌یافته</span><strong>${dashboardValue(d.realized)}</strong></div>
       <div class="overview-card card-blue"><span>سود/زیان مجموع</span><strong>${dashboardValue(totalCombined)}</strong></div>
     </section>
-    <section class="panel portfolio-cash-panel"><h2>💼 دارایی و نقدینگی</h2><div class="finance-grid"><div class="finance-stat"><span>🏦 دارایی کل</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong><small>ریال = ارزش روز سهام + ماندهٔ نقد</small></div><div class="finance-stat"><span>📈 ارزش روز سهام</span><strong>${dashboardValue(d.current)}</strong><small>ریال، پیش از کارمزد فروش احتمالی</small></div><div class="finance-stat"><span>💵 ماندهٔ نقد محاسبه‌شده</span><strong id="cashBalanceValue">${dashboardValue(d.portfolioCash)}</strong><small>ریال</small></div><div class="finance-stat"><span>🔎 اختلاف قدرت خرید با نقد</span><strong id="brokerDifferenceValue">${d.brokerDifference===null?'—':(d.brokerDifference>0?'+':'')+dashboardNumber(d.brokerDifference)}</strong><small>ریال؛ اختلاف لزوماً خطا نیست</small></div></div><div class="finance-inputs"><label class="cash-field">ماندهٔ نقد اولیه (ریال)<input id="portfolioCash" type="text" inputmode="numeric" value="${formatThousands(Number(app.portfolioCash)||0)}" placeholder="ماندهٔ آغاز دوره"></label><label class="cash-field">قدرت خرید اعلام‌شدهٔ کارگزاری (ریال)<input id="brokerBuyingPower" type="text" inputmode="numeric" value="${app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower)}" placeholder="ورود دستی از کارگزاری"></label><label class="cash-field">هدف واریز ماهانه (ریال)<input id="monthlyDepositTarget" type="text" inputmode="numeric" value="${formatThousands(app.monthlyDepositTarget)}"></label></div><p class="muted" id="monthlyDepositStatus">${monthlyDepositSummary()}</p></section>
-    <section class="panel cash-ledger"><div class="panel-head"><h2>💳 گردش نقدی پورتفو</h2><div class="cash-actions"><button id="cashToggleBtn" type="button" aria-expanded="false">📋 نمایش تراکنش‌ها</button><button id="cashAddBtn" class="primary" type="button">＋ واریز / برداشت</button></div></div><p class="muted">موجودی نقد = ماندهٔ اولیه + واریزها − برداشت‌ها + فروش‌های خالص − خریدها. برای داده‌های قدیمی، ماندهٔ اولیه قابل تنظیم است.</p><p class="muted" id="cashRecentSummary">${cashRecentSummary()}</p><div class="table-wrap cash-ledger-details" id="cashLedgerDetails" hidden><table><thead><tr><th>تاریخ</th><th>نوع</th><th>مبلغ (ریال)</th><th>شرح</th><th>عملیات</th></tr></thead><tbody id="cashLedgerRows"></tbody></table></div></section>
+    <section class="panel portfolio-cash-panel">
+      <h2>💼 دارایی و قدرت خرید</h2>
+      <div class="finance-grid simple-finance-grid">
+        <div class="finance-stat"><span>🏦 دارایی کل</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong><small>ریال؛ ارزش روز سهام + قدرت خرید دستی</small></div>
+        <div class="finance-stat"><label for="brokerBuyingPower">💳 قدرت خرید کارگزاری (ریال)</label><input id="brokerBuyingPower" type="text" inputmode="numeric" autocomplete="off" value="${app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower)}" placeholder="مبلغ قدرت خرید را وارد کنید"><small>مبلغ را مطابق کارگزاری وارد کنید؛ خودکار تغییر نمی‌کند.</small></div>
+      </div>
+    </section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
-    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و ماندهٔ نقد محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>تحقق‌نیافته</th><th>تحقق‌یافته</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
-  const cashInput=$("#portfolioCash");
-  cashInput.oninput=()=>{app.portfolioCash=num(cashInput.value);const pd=portfolioData();$("#cashBalanceValue").textContent=dashboardValue(pd.portfolioCash);$("#totalAssetsValue").textContent=dashboardValue(pd.totalAssets);$("#brokerDifferenceValue").textContent=pd.brokerDifference===null?'—':(pd.brokerDifference>0?'+':'')+dashboardNumber(pd.brokerDifference);saveApp()};
-  cashInput.onblur=()=>{app.portfolioCash=num(cashInput.value);renderOverview();saveApp()};
-  const brokerInput=$("#brokerBuyingPower"),targetInput=$("#monthlyDepositTarget");
-  brokerInput.oninput=()=>{app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;const v=portfolioData().brokerDifference;$("#brokerDifferenceValue").textContent=v===null?'—':(v>0?'+':'')+dashboardNumber(v);saveApp()};
-  brokerInput.onblur=()=>{brokerInput.value=app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower);saveApp()};
-  targetInput.oninput=()=>{app.monthlyDepositTarget=Math.max(0,num(targetInput.value));$("#monthlyDepositStatus").textContent=monthlyDepositSummary();saveApp()};
-  targetInput.onblur=()=>{targetInput.value=formatThousands(app.monthlyDepositTarget);saveApp()};
-  renderCashLedger();
-  const toggle=$("#cashToggleBtn"),details=$("#cashLedgerDetails");toggle.onclick=()=>{details.hidden=!details.hidden;toggle.setAttribute('aria-expanded',String(!details.hidden));toggle.textContent=details.hidden?'📋 نمایش تراکنش‌ها':'▴ پنهان‌کردن تراکنش‌ها'};
+    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>تحقق‌نیافته</th><th>تحقق‌یافته</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
+  const brokerInput=$("#brokerBuyingPower");
+  brokerInput.oninput=()=>{
+    app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;
+    $("#totalAssetsValue").textContent=dashboardValue(portfolioData().totalAssets);
+    saveApp();
+  };
+  brokerInput.onblur=()=>{
+    brokerInput.value=app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower);
+    saveApp();
+  };
   setDataFieldTabOrder();
   el.querySelectorAll(".overview-row").forEach(row=>{
     row.onclick=e=>{if(e.target.closest("button")){overviewMode=false;activeSymbol=row.dataset.symbol;app.ui.overview=false;renderSymbols();render();saveApp()}};
