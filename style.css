@@ -274,3 +274,25 @@ body>header,body>header:is(:hover,:focus-within){position:fixed!important;inset-
 @media(max-width:1100px){#overviewView .overview-primary-cards{grid-template-columns:repeat(2,minmax(0,1fr))}#overviewView .overview-donut-layout{gap:13px}#overviewView .overview-donut{width:165px;height:165px}#overviewView .overview-donut-hole{width:112px;height:112px}#overviewView .overview-donut-hole strong{font-size:12px}}
 @media(max-width:780px){#overviewView .overview-chart-grid{grid-template-columns:1fr}#overviewView .overview-secondary-cards{grid-template-columns:repeat(2,minmax(0,1fr))}#overviewView .overview-donut{width:195px;height:195px}#overviewView .overview-donut-hole{width:130px;height:130px}}
 @media(max-width:500px){#overviewView .overview-top{padding:13px!important}#overviewView .overview-primary-cards,#overviewView .overview-secondary-cards{gap:8px}#overviewView .overview-primary-cards .overview-card{min-height:124px!important}#overviewView .overview-secondary-cards .overview-card{min-height:102px!important}#overviewView .overview-chart-panel{padding:13px!important}#overviewView .overview-donut-layout{gap:12px}#overviewView .overview-donut{width:145px;height:145px}#overviewView .overview-donut-hole{width:98px;height:98px}#overviewView .overview-donut-hole strong{font-size:11px}#overviewView .overview-allocation-legend li{font-size:11px}#overviewView .overview-chart-head{margin-bottom:12px}}
+
+/* v014 — پرداخت نهایی داشبورد؛ بدون تغییر در منطق مالی */
+#overviewView .overview-top{padding:15px 18px!important}
+#overviewView .overview-top .overview-head{padding:0 0 7px!important;margin:0 0 9px!important}
+#overviewView .overview-top .overview-head .eyebrow{font-size:10px;line-height:1.35}
+#overviewView .overview-top .overview-head h2{font-size:20px;line-height:1.45;margin:0}
+#overviewView .overview-top .overview-head p{margin-top:1px;line-height:1.45}
+#overviewView .overview-primary-cards .overview-card{min-height:132px!important}
+#overviewView .overview-secondary-cards .overview-card{min-height:96px!important}
+#overviewView .overview-buying-card{display:flex;flex-direction:column;align-items:center;justify-content:center}
+#overviewView .overview-buying-card label{display:block;margin-top:0;line-height:1.55}
+#overviewView .overview-buying-card input{height:41px;width:min(100%,230px);margin:7px auto 0;font-size:19px;font-weight:700;border-radius:9px}
+#overviewView .overview-buying-card input:focus-visible{outline:2px solid #4b8be5;outline-offset:2px}
+#overviewView .overview-buying-card small{margin-top:4px;line-height:1.4}
+#overviewView .overview-chart-head{margin-bottom:12px}
+#overviewView .overview-monthly-svg{max-height:235px}
+@media(max-width:700px){
+ #overviewView .overview-top{padding:12px!important}
+ #overviewView .overview-primary-cards .overview-card{min-height:116px!important}
+ #overviewView .overview-secondary-cards .overview-card{min-height:92px!important}
+ #overviewView .overview-buying-card input{font-size:16px;height:38px}
+}

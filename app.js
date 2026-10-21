@@ -269,7 +269,7 @@ function overviewMonthlyChart(symbolName,period){
   if(!items.length)return '<p class="overview-chart-empty">برای این نماد و بازه، خرید معتبری ثبت نشده یا قیمت پایانی موجود نیست.</p>';
   const values=items.map(x=>x.profit*100),lo=Math.min(0,...values),hi=Math.max(0,...values),maxAbs=Math.max(1,Math.abs(lo),Math.abs(hi));
   const top=8,bottom=155,mid=top+(hi/(hi-lo||1))*(bottom-top),plotHeight=bottom-top;
-  const spacing=660/items.length,barW=Math.min(62,spacing*.54);
+  const spacing=660/items.length,barW=Math.min(94,spacing*.70);
   const bars=items.map((x,i)=>{const v=x.profit*100;const yy=top+(hi-v)/(hi-lo||1)*plotHeight;const y=Math.min(mid,yy);const h=Math.max(2,Math.abs(yy-mid));const cx=55+(i+.5)*spacing;const label=escapeHtml(x.month);const title=escapeHtml(`${x.month}: ${v.toLocaleString('fa-IR',{maximumFractionDigits:2})}٪؛ ${dashboardNumber(x.amount)} ریال`);return `<g><title>${title}</title><rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${v>=0?'#39b987':'#e17979'}"/><text x="${cx}" y="181" text-anchor="middle">${label}</text></g>`}).join('');
   return `<svg class="overview-monthly-svg" viewBox="0 0 770 200" role="img" aria-label="نمودار درصد سود و زیان خریدهای ماهانهٔ نماد ${escapeHtml(symbolName)}"><line x1="40" x2="745" y1="${mid}" y2="${mid}" stroke="#aebdce" stroke-dasharray="4 4"/><text x="35" y="${mid-5}" text-anchor="end">۰٪</text>${bars}</svg>`;
 }
