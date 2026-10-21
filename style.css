@@ -113,3 +113,11 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .overview-sort-button.is-active{color:#115caa;background:#dceafa}
 .overview-sort-indicator{font-size:10px;opacity:.55}
 .overview-sort-button.is-active .overview-sort-indicator{opacity:1}
+
+/* نماد یکدست و نشانگر مرتب‌سازی مانند سربرگ کارگزاری */
+.overview-table .overview-symbol{display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;direction:rtl;white-space:nowrap;text-align:right}
+.overview-symbol-mark{display:inline-block;flex:0 0 11px;width:11px;height:11px;border-radius:3px;background:#22b98a;box-shadow:inset 0 -1px 0 rgba(0,0,0,.10)}
+.overview-sort-indicator{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:8px;line-height:7px;color:#929da9;min-width:12px;opacity:.8}
+.overview-sort-button.is-active .overview-sort-indicator{color:#15966c;opacity:1;font-size:12px;line-height:14px}
+.overview-sort-button.is-active{color:#415b72;background:#e3eff5}
+.overview-sort-button.is-active:hover{background:#dceaf7}
