@@ -500,12 +500,3 @@ function editCash(existing){
 function validSales(symbol,sales){return costLedger({...symbol,sales}).valid;}
 function editSale(existing){const tr=[...rowsEl.querySelectorAll(".sale-tr")].find(row=>row.dataset.id===existing.id);tr?.querySelector(".shares")?.focus()}
 
-// جایگاه ثابت سربرگ؛ ارتفاع واقعی آن در فضاگیری صفحه لحاظ می‌شود.
-(function keepHeaderSpace(){
-  const siteHeader=document.querySelector('body > header');
-  if(!siteHeader)return;
-  const sync=()=>document.documentElement.style.setProperty('--site-header-height',`${Math.ceil(siteHeader.getBoundingClientRect().height)}px`);
-  sync();
-  if(typeof ResizeObserver!=='undefined')new ResizeObserver(sync).observe(siteHeader);
-  window.addEventListener('resize',sync);
-})();
