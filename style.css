@@ -69,3 +69,7 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 
 /* نسخه ۴٫۱۰٫۹ — فاصلهٔ زمانی از اولین خرید */
 .purchase-duration{display:inline-block;margin-right:5px;padding:2px 9px;border-radius:999px;background:#e8f5e9;color:#2e7d32;font-size:.82em;font-weight:600;white-space:nowrap}
+
+.trade-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sell-button{border:1px solid #c24141;background:#fff0f0;color:#b42323;border-radius:8px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}.sell-button:hover{background:#ffe0e0}.sales-panel{margin-top:16px}.sales-panel td,.sales-panel th{padding:10px}.sale-delete{color:#c62828;background:none;border:0;cursor:pointer;font:inherit}
+
+.realized-summary{font-weight:700;margin-inline-start:18px}.sales-panel .panel-head{display:flex;align-items:center;flex-wrap:wrap;gap:12px}

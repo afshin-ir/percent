@@ -23,7 +23,7 @@ function updatePurchasesTitle(){
   el.innerHTML=`خریدها در <span class="purchase-duration">${duration}</span>`;
 }
 function jalaliString(y,m,d){return `${y}/${String(m).padStart(2,"0")}/${String(d).padStart(2,"0")}`} 
-function makeSymbol(rows=initialData,price=713145,fee=.12,allocationLimit=0){return{price,fee,allocationLimit,rows:rows.map(x=>({id:id(),date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}function normalizeApp(a){if(a?.symbols&&typeof a.symbols==="object"){const names=Array.isArray(a.symbolOrder)?a.symbolOrder.filter(n=>a.symbols[n]):Object.keys(a.symbols);Object.keys(a.symbols).forEach(n=>{if(!names.includes(n))names.push(n);const raw=a.symbols[n]||{};a.symbols[n]={price:Number(raw.price)||0,fee:raw.fee!=null?Number(raw.fee):Number(a.sellFee??.12),allocationLimit:Number(raw.allocationLimit)||0,rows:Array.isArray(raw.rows)?raw.rows.map(r=>({id:r.id||id(),date:r.date||"",shares:Number(r.shares)||0,price:Number(r.price)||0,commission:Number(r.commission)||0})):[]}});a.symbolOrder=names;a.portfolioCash=Number(a.portfolioCash)||0;a.version=4;a.ui=a.ui||{};return a}const symbols={[DEFAULT_SYMBOL]:makeSymbol()};if(a?.price!=null)symbols[DEFAULT_SYMBOL].price=+a.price||713145;if(Array.isArray(a?.rows)&&a.rows.length)symbols[DEFAULT_SYMBOL].rows=a.rows.map(r=>({id:id(),date:r.date||"",shares:+r.shares||0,price:+r.price||0,commission:+r.commission||0}));symbols[DEFAULT_SYMBOL].fee=Number(a?.fee??.12);return{version:4,activeSymbol:DEFAULT_SYMBOL,portfolioCash:0,symbolOrder:[DEFAULT_SYMBOL],ui:{chartSymbol:DEFAULT_SYMBOL},symbols}}
+function makeSymbol(rows=initialData,price=713145,fee=.12,allocationLimit=0){return{price,fee,allocationLimit,sales:[],rows:rows.map(x=>({id:id(),date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}function normalizeApp(a){if(a?.symbols&&typeof a.symbols==="object"){const names=Array.isArray(a.symbolOrder)?a.symbolOrder.filter(n=>a.symbols[n]):Object.keys(a.symbols);Object.keys(a.symbols).forEach(n=>{if(!names.includes(n))names.push(n);const raw=a.symbols[n]||{};a.symbols[n]={price:Number(raw.price)||0,fee:raw.fee!=null?Number(raw.fee):Number(a.sellFee??.12),allocationLimit:Number(raw.allocationLimit)||0,sales:Array.isArray(raw.sales)?raw.sales:[],rows:Array.isArray(raw.rows)?raw.rows.map(r=>({id:r.id||id(),date:r.date||"",shares:Number(r.shares)||0,price:Number(r.price)||0,commission:Number(r.commission)||0})):[]}});a.symbolOrder=names;a.portfolioCash=Number(a.portfolioCash)||0;a.cashTransactions=Array.isArray(a.cashTransactions)?a.cashTransactions:[];a.version=5;a.ui=a.ui||{};return a}const symbols={[DEFAULT_SYMBOL]:makeSymbol()};if(a?.price!=null)symbols[DEFAULT_SYMBOL].price=+a.price||713145;if(Array.isArray(a?.rows)&&a.rows.length)symbols[DEFAULT_SYMBOL].rows=a.rows.map(r=>({id:id(),date:r.date||"",shares:+r.shares||0,price:+r.price||0,commission:+r.commission||0}));symbols[DEFAULT_SYMBOL].fee=Number(a?.fee??.12);return{version:5,activeSymbol:DEFAULT_SYMBOL,portfolioCash:0,cashTransactions:[],symbolOrder:[DEFAULT_SYMBOL],ui:{chartSymbol:DEFAULT_SYMBOL},symbols}}
 function loadApp(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)return normalizeApp(v);for(const k of LEGACY_KEYS){const old=JSON.parse(localStorage.getItem(k)||"null");if(old)return normalizeApp(old)}}catch{}return normalizeApp(null)}function saveApp(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;localStorage.setItem(KEY,JSON.stringify(app))}function active(){return app.symbols[activeSymbol]}function sortRows(){active().rows.sort((a,b)=>(parseJ(b.date)?.date-parseJ(a.date)?.date)||0)}
 function renderSymbols(){const el=$("#symbolList");el.innerHTML="";(app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{const s=app.symbols[name];if(!s)return;const b=document.createElement("button");b.className="symbol-btn"+(name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;const pd=portfolioData(), item=pd.items.find(x=>x.name===name), over=item?.share!==null&&item?.allocationLimit>0&&item.share*100>item.allocationLimit;
     b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span><span class="symbol-share ${over?"negative":""}">${item?.share===null||item?.share===undefined?"—":dashboardPct(item.share)}</span>`;b.onclick=()=>switchSymbol(name);b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbols();saveApp()};el.appendChild(b)})}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function switchSymbol(name){activeSymbol=name;sortRows();updatePurchasesTitle();renderSymbols();render();saveApp()}
@@ -86,33 +86,49 @@ const symbolViewSelectors = [".hero-row", ".cards", ".settings", ".chart-panel",
 
 function dashboardNumber(v){ return fmt(v); }
 function dashboardPct(v){ return fmtPct(v); }
+// Moving weighted-average cost basis. Purchases and sales are processed chronologically.
+function costLedger(symbol){
+ const events=[...(symbol.rows||[]).map((r,i)=>({...r,kind:'buy',seq:i})),...(symbol.sales||[]).map((r,i)=>({...r,kind:'sell',seq:i}))];
+ events.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(a.kind==='buy'?-1:1));
+ let shares=0,cost=0,realized=0;const bySale={};
+ for(const e of events){const q=Number(e.shares)||0;if(q<=0)continue;
+  if(e.kind==='buy'){shares+=q;cost+=q*(Number(e.price)||0)+(Number(e.commission)||0)}
+  else {const basis=shares>0?cost*Math.min(q,shares)/shares:0;const net=q*(Number(e.price)||0)-(Number(e.commission)||0);const gain=net-basis;bySale[e.id]={basis,net,gain};realized+=gain;shares-=q;cost-=basis; if(Math.abs(cost)<.000001)cost=0;}
+ }
+ return {shares,cost,realized,bySale};
+}
 function portfolioData(){
   const items=[];
   let shares=0, purchases=0, investment=0, current=0;
   Object.entries(app.symbols).forEach(([name,s])=>{
     const rows=Array.isArray(s.rows)?s.rows:[];
-    const totalShares=rows.reduce((n,r)=>n+(Number(r.shares)||0),0);
-    const cost=rows.reduce((n,r)=>n+(Number(r.shares)||0)*(Number(r.price)||0)+(Number(r.commission)||0),0);
+    const totalShares=rows.reduce((n,r)=>n+(Number(r.shares)||0),0)-(s.sales||[]).reduce((n,r)=>n+(Number(r.shares)||0),0);
+    const grossCost=rows.reduce((n,r)=>n+(Number(r.shares)||0)*(Number(r.price)||0)+(Number(r.commission)||0),0);
+    const boughtShares=rows.reduce((n,r)=>n+(Number(r.shares)||0),0);
+    const ledger=costLedger(s);
+    const cost=ledger.cost;
     const fee=(Number(s.fee)||0)/100;
     const hasPrice=Number(s.price)>0;
     const value=hasPrice ? totalShares*Number(s.price)*(1-fee) : null;
     const profit=value===null?null:value-cost;
     const ret=profit!==null&&cost?profit/cost:null;
     shares+=totalShares; purchases+=rows.length; investment+=cost; if(value!==null) current+=value;
-    items.push({name,totalShares,purchases,cost,value,profit,ret,allocationLimit:Number(s.allocationLimit)||0});
+    items.push({name,totalShares,purchases,cost,value,profit,ret,realized:ledger.realized,allocationLimit:Number(s.allocationLimit)||0});
   });
-  const buyingPower=investment+(Number(app.portfolioCash)||0);
+  const cashBalance=effectiveCash();
+  const buyingPower=investment+cashBalance;
   items.forEach(x=>x.share=buyingPower?x.cost/buyingPower:null);
   const priced=items.filter(x=>x.value!==null);
   const totalProfit=priced.length?items.reduce((sum,x)=>sum+(x.profit??0),0):null;
   const totalRet=totalProfit!==null&&investment?totalProfit/investment:null;
-  const totalAssets=totalProfit===null?null:investment+totalProfit+(Number(app.portfolioCash)||0);
-  return {items,shares,purchases,investment,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,portfolioCash:Number(app.portfolioCash)||0,buyingPower,totalAssets};
+  const totalAssets=totalProfit===null?null:investment+totalProfit+cashBalance;
+  const realized=items.reduce((sum,x)=>sum+x.realized,0);
+  return {items,shares,purchases,investment,realized,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,portfolioCash:cashBalance,buyingPower,totalAssets};
 }
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
 }
-function renderOverview(){
+function renderOverview(){const salesPanel=document.querySelector("#salesPanel");if(salesPanel)salesPanel.style.display="none";
   const d=portfolioData();
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display="none"));
   let el=document.querySelector("#overviewView");
@@ -121,23 +137,28 @@ function renderOverview(){
   const rows=orderedItems.map(x=>{
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
     const over=x.share!==null&&x.allocationLimit>0&&x.share*100>x.allocationLimit;
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="true"><td><span class="overview-drag-handle" title="برای جابه‌جایی بکشید">⋮⋮</span><button class="overview-symbol" type="button">${escapeHtml(x.name)}</button></td><td>${dashboardNumber(x.totalShares)}</td><td>${dashboardValue(x.cost)}</td><td>${dashboardValue(x.value)}</td><td class="${profitClass}">${x.profit===null?"—":(x.profit>0?"+":"")+dashboardNumber(x.profit)}</td><td class="${profitClass}">${x.ret===null?"—":dashboardPct(x.ret)}</td><td class="${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="true"><td><span class="overview-drag-handle" title="برای جابه‌جایی بکشید">⋮⋮</span><button class="overview-symbol" type="button">${escapeHtml(x.name)}</button></td><td>${dashboardNumber(x.totalShares)}</td><td>${dashboardValue(x.cost)}</td><td>${dashboardValue(x.value)}</td><td class="${profitClass}">${x.profit===null?"—":(x.profit>0?"+":"")+dashboardNumber(x.profit)}</td><td>${dashboardNumber(x.realized)}</td><td class="${profitClass}">${x.ret===null?"—":dashboardPct(x.ret)}</td><td class="${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
   }).join("");
+  const totalCombined=d.profit===null?null:d.profit+d.realized;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
   el.innerHTML=`
     <div class="overview-head"><div><span class="eyebrow">وضعیت کل سبد</span><h2>نمای کلی</h2><p>خلاصه‌ای از وضعیت همهٔ نمادهای موجود در سبد</p></div></div>
     <section class="overview-cards">
       <div class="overview-card card-blue"><i class="card-icon">◉</i><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
       <div class="overview-card card-indigo"><i class="card-icon">▣</i><span>کل سرمایه‌گذاری</span><strong>${dashboardValue(d.investment)}</strong></div>
-      <div class="overview-card card-green ${profitClass}"><i class="card-icon">↗</i><span>سود/زیان کل</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
-      <div class="overview-card card-purple ${profitClass}"><i class="card-icon">%</i><span>بازدهی کل</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
+      <div class="overview-card card-green ${profitClass}"><i class="card-icon">↗</i><span>سود/زیان تحقق‌نیافته</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
+      <div class="overview-card card-purple ${profitClass}"><i class="card-icon">%</i><span>بازدهی تحقق‌نیافته</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
+      <div class="overview-card card-green"><span>سود/زیان تحقق‌یافته</span><strong>${dashboardValue(d.realized)}</strong></div>
+      <div class="overview-card card-blue"><span>سود/زیان مجموع</span><strong>${dashboardValue(totalCombined)}</strong></div>
     </section>
-    <section class="panel portfolio-cash-panel"><div class="portfolio-summary"><div class="portfolio-summary-line"><span><i class="portfolio-line-icon icon-buying-power">💳</i> قدرت خرید پورتفو:</span><strong id="buyingPowerValue">${dashboardValue(d.buyingPower)}</strong><b>ریال</b></div><div class="portfolio-summary-line"><span><i class="portfolio-line-icon icon-total-assets">📊</i> دارایی کل:</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong><b>ریال</b></div></div><label class="cash-field">موجودی نقد پورتفو<input id="portfolioCash" type="text" inputmode="numeric" value="${d.portfolioCash?formatThousands(d.portfolioCash):""}" placeholder="مثلاً ۶۰۰٬۰۰۰"></label></section>
+    <section class="panel portfolio-cash-panel"><div class="portfolio-summary"><div class="portfolio-summary-line"><span><i class="portfolio-line-icon icon-buying-power">💳</i> قدرت خرید پورتفو:</span><strong id="buyingPowerValue">${dashboardValue(d.buyingPower)}</strong><b>ریال</b></div><div class="portfolio-summary-line"><span><i class="portfolio-line-icon icon-total-assets">📊</i> دارایی کل:</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong><b>ریال</b></div></div><label class="cash-field">ماندهٔ نقد اولیه (ریال)<input id="portfolioCash" type="text" inputmode="numeric" value="${formatThousands(Number(app.portfolioCash)||0)}" placeholder="مثلاً ۶۰۰٬۰۰۰"></label></section>
+    <section class="panel cash-ledger"><div class="panel-head"><h2>گردش نقدی پورتفو</h2><button id="cashAddBtn" class="primary" type="button">＋ واریز / برداشت</button></div><p class="muted">موجودی نقد = ماندهٔ اولیه + واریزها − برداشت‌ها + فروش‌های خالص − خریدها. برای داده‌های قدیمی، ماندهٔ اولیه قابل تنظیم است.</p><div class="table-wrap"><table><thead><tr><th>تاریخ</th><th>نوع</th><th>مبلغ (ریال)</th><th>شرح</th><th></th></tr></thead><tbody id="cashLedgerRows"></tbody></table></div></section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
-    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس مبلغ خرید و قدرت خرید پورتفو محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>سود/زیان</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div><h2>خلاصهٔ نمادها</h2><p class="muted">سهم از سبد بر اساس مبلغ خرید و قدرت خرید پورتفو محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr><th>نماد</th><th>تعداد</th><th>بهای خرید</th><th>ارزش فعلی</th><th>تحقق‌نیافته</th><th>تحقق‌یافته</th><th>بازدهی</th><th>سهم از سبد</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
   const cashInput=$("#portfolioCash");
   cashInput.oninput=()=>{app.portfolioCash=num(cashInput.value);const pd=portfolioData();$("#buyingPowerValue").textContent=dashboardValue(pd.buyingPower);$("#totalAssetsValue").textContent=dashboardValue(pd.totalAssets);saveApp()};
-  cashInput.onblur=()=>{cashInput.value=formatThousands(cashInput.value);app.portfolioCash=num(cashInput.value);renderOverview();saveApp()};
+  cashInput.onblur=()=>{app.portfolioCash=num(cashInput.value);renderOverview();saveApp()};
+  renderCashLedger();
   setDataFieldTabOrder();
   el.querySelectorAll(".overview-row").forEach(row=>{
     row.onclick=e=>{if(e.target.closest("button")){overviewMode=false;activeSymbol=row.dataset.symbol;app.ui.overview=false;renderSymbols();render();saveApp()}};
@@ -168,6 +189,7 @@ function renderSymbolView(){
   $("#allocationLimit").value=formatDecimal(s.allocationLimit||0);
   rowsEl.innerHTML="";
   s.rows.forEach(r=>addRow(r));
+  renderSales();
   $("#tableEmpty").style.display=s.rows.length?"none":"block";
   updateTableOnly();
   $("#lastUpdated").textContent=`${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;
@@ -199,3 +221,71 @@ renderSymbols=renderSymbolsDashboardAware;
 saveApp=saveAppDashboardAware;
 render=renderDashboardAware;
 renderSymbols();render();saveApp();
+
+// Sales are recorded separately; existing purchase records remain intact.
+function renderSales(){
+ const panel=document.querySelector('#salesPanel'), body=document.querySelector('#salesRows');
+ if(!panel||!body)return;
+ const sales=active().sales||[];
+ const ledger=costLedger(active());
+ panel.style.display=sales.length?'block':'none';
+ const head=panel.querySelector('.panel-head');if(head){let summary=head.querySelector('.realized-summary');if(!summary){summary=document.createElement('span');summary.className='realized-summary';head.appendChild(summary)}summary.textContent='سود/زیان تحقق‌یافته: '+(ledger.realized>=0?'+':'')+fmt(ledger.realized)+' ریال';summary.classList.toggle('positive',ledger.realized>0);summary.classList.toggle('negative',ledger.realized<0)}
+ body.innerHTML='';
+ sales.slice().reverse().forEach(s=>{
+  const tr=document.createElement('tr');
+  const values=[enToFa(s.date),fmt(s.shares),fmt(s.price),fmt(s.commission),fmt(s.shares*s.price-s.commission),fmt(ledger.bySale[s.id]?.basis??0), (ledger.bySale[s.id]?.gain>0?"+":"")+fmt(ledger.bySale[s.id]?.gain??0)];
+  values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===6){const gain=ledger.bySale[s.id]?.gain||0;td.className=gain>0?'positive':gain<0?'negative':''}tr.appendChild(td)});
+  const td=document.createElement('td'),edit=document.createElement('button');edit.textContent="ویرایش";edit.className="sale-edit";edit.onclick=()=>editSale(s);td.appendChild(edit);const btn=document.createElement('button');btn.className='sale-delete';btn.textContent='حذف';btn.onclick=()=>{if(!confirm('این فروش حذف شود؟'))return;active().sales=active().sales.filter(x=>x.id!==s.id);render();renderSymbols();saveApp()};td.appendChild(btn);tr.appendChild(td);body.appendChild(tr);
+ });
+}
+const sellButton=document.querySelector('#sellBtn');
+if(sellButton)sellButton.onclick=()=>{
+ const symbol=active(),bought=symbol.rows.reduce((n,r)=>n+(Number(r.shares)||0),0),sold=(symbol.sales||[]).reduce((n,r)=>n+(Number(r.shares)||0),0),available=bought-sold;
+ if(available<=0)return alert('سهامی برای فروش باقی نمانده است.');
+ const today=currentJalali(),defaultDate=`${today.y}/${String(today.m).padStart(2,'0')}/${String(today.d).padStart(2,'0')}`;
+ const date=prompt('تاریخ فروش (هجری شمسی):',defaultDate);if(date===null)return;
+ if(!parseJ(faToEn(date)))return alert('تاریخ معتبر نیست.');
+ if(symbol.rows.some(r=>String(r.date)>faToEn(date)))return alert('برای محاسبهٔ بهای تمام‌شده، تاریخ فروش نباید پیش از خریدهای ثبت‌شده باشد.');
+ const quantity=prompt(`تعداد سهام فروش (حداکثر ${fmt(available)}):`);if(quantity===null)return;
+ const shares=num(quantity);if(!Number.isInteger(shares)||shares<=0||shares>available)return alert('تعداد سهام نامعتبر است یا از موجودی بیشتر است.');
+ const priceInput=prompt('قیمت فروش هر سهم (ریال):',String(symbol.price||''));if(priceInput===null)return;
+ const price=num(priceInput);if(price<=0)return alert('قیمت فروش باید بیشتر از صفر باشد.');
+ const feeInput=prompt('کارمزد فروش (ریال):',String(Math.round(shares*price*(symbol.fee||0)/100)));if(feeInput===null)return;
+ const commission=num(feeInput);if(commission<0)return alert('کارمزد نامعتبر است.');
+ symbol.sales=symbol.sales||[];const candidate={id:id(),date:faToEn(date),shares,price,commission};if(!validSales(symbol,[...symbol.sales,candidate]))return alert("موجودی سهم در تاریخ فروش کافی نیست.");symbol.sales.push(candidate);
+ render();renderSymbols();saveApp();
+};
+
+// Cash movements are derived from recorded trades, plus manual deposits/withdrawals.
+function tradeCashFlow(){return Object.values(app.symbols).reduce((sum,s)=>sum+(s.sales||[]).reduce((a,r)=>a+num(r.shares)*num(r.price)-num(r.commission),0)-(s.rows||[]).reduce((a,r)=>a+num(r.shares)*num(r.price)+num(r.commission),0),0)}
+function manualCashFlow(){return (app.cashTransactions||[]).reduce((a,r)=>a+(r.type==='deposit'?1:-1)*num(r.amount),0)}
+function effectiveCash(){return (Number(app.portfolioCash)||0)+tradeCashFlow()+manualCashFlow()}
+function renderCashLedger(){
+ const body=document.querySelector('#cashLedgerRows');if(!body)return;body.innerHTML='';
+ const tx=(app.cashTransactions||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+ for(const r of tx){const tr=document.createElement('tr');for(const value of [enToFa(r.date),r.type==='deposit'?'واریز':'برداشت',fmt(r.amount),r.note||'—']){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}const td=document.createElement('td');const edit=document.createElement('button');edit.textContent='ویرایش';edit.onclick=()=>editCash(r);const del=document.createElement('button');del.textContent='حذف';del.className='sale-delete';del.onclick=()=>{if(!confirm('این گردش نقدی حذف شود؟'))return;app.cashTransactions=app.cashTransactions.filter(x=>x.id!==r.id);render();saveApp()};td.append(edit,del);tr.appendChild(td);body.appendChild(tr)}
+ const add=document.querySelector('#cashAddBtn');if(add)add.onclick=()=>editCash(null);
+}
+function editCash(existing){
+ const today=currentJalali(),date=prompt('تاریخ (هجری شمسی):',existing?.date||`${today.y}/${String(today.m).padStart(2,'0')}/${String(today.d).padStart(2,'0')}`);if(date===null)return;
+ if(!parseJ(faToEn(date)))return alert('تاریخ نامعتبر است.');
+ const type=prompt('نوع تراکنش: واریز یا برداشت',existing?.type==='withdrawal'?'برداشت':'واریز');if(type===null)return;
+ if(!['واریز','برداشت'].includes(type.trim()))return alert('نوع تراکنش نامعتبر است.');
+ const amountText=prompt('مبلغ (ریال):',String(existing?.amount||''));if(amountText===null)return;const amount=num(amountText);if(!(amount>0))return alert('مبلغ باید مثبت باشد.');
+ const note=prompt('شرح (اختیاری):',existing?.note||'');if(note===null)return;
+ const next={id:existing?.id||id(),date:faToEn(date),type:type.trim()==='واریز'?'deposit':'withdrawal',amount,note};
+ if(existing)Object.assign(existing,next);else(app.cashTransactions??=[]).push(next);render();saveApp();
+}
+function validSales(symbol,sales){
+ const events=[...symbol.rows.map(r=>({...r,kind:'buy'})),...sales.map(r=>({...r,kind:'sell'}))].sort((a,b)=>String(a.date).localeCompare(String(b.date))||(a.kind==='buy'?-1:1));let shares=0;
+ for(const e of events){if(!parseJ(e.date)||!(num(e.shares)>0)||!(num(e.price)>0)||num(e.commission)<0)return false;shares+=(e.kind==='buy'?1:-1)*num(e.shares);if(shares<0)return false}return true;
+}
+function editSale(existing){
+ const symbol=active();const date=prompt('تاریخ فروش (هجری شمسی):',existing.date);if(date===null)return;if(!parseJ(faToEn(date)))return alert('تاریخ نامعتبر است.');
+ const quantity=prompt('تعداد سهم:',String(existing.shares));if(quantity===null)return;const shares=num(quantity);if(!Number.isInteger(shares)||shares<=0)return alert('تعداد نامعتبر است.');
+ const priceText=prompt('قیمت فروش هر سهم (ریال):',String(existing.price));if(priceText===null)return;const price=num(priceText);if(price<=0)return alert('قیمت نامعتبر است.');
+ const feeText=prompt('کارمزد فروش (ریال):',String(existing.commission));if(feeText===null)return;const commission=num(feeText);if(commission<0)return alert('کارمزد نامعتبر است.');
+ const candidate={...existing,date:faToEn(date),shares,price,commission};const sales=symbol.sales.map(x=>x.id===existing.id?candidate:x);
+ if(!validSales(symbol,sales))return alert('این ویرایش موجب فروش بیش از موجودی در تاریخ معامله می‌شود یا اطلاعات نامعتبر دارد.');
+ Object.assign(existing,candidate);render();renderSymbols();saveApp();
+}
