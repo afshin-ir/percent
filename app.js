@@ -76,23 +76,32 @@ function recordPriceSnapshot(){
  if(idx<0)s.priceHistory.push(snapshot);else s.priceHistory[idx]=snapshot;
  s.priceHistory.sort((a,b)=>a.date.localeCompare(b.date));
 }
+// A symbol contributes only after its first valid purchase. Missing months are not
+// backfilled with today's price, and the current month remains provisional.
+function firstPurchaseDate(symbol){
+ return (symbol.rows||[]).filter(r=>Number(r.shares)>0&&Number(r.price)>0&&parseJ(r.date))
+   .map(r=>faToEn(r.date)).sort()[0]||null;
+}
 function monthlyChartData(){
  const s=active(),today=currentJalali(),period=Number(app.ui?.chartPeriod)||6;
- const monthNumber=today.y*12+today.m-1,byMonth=new Map();
+ const currentMonth=today.y*12+today.m-1,firstBuy=firstPurchaseDate(s),byMonth=new Map();
+ if(!firstBuy)return [];
  (s.priceHistory||[]).forEach(h=>{
-   const d=parseJ(h.date);if(!d)return;
-   const delta=monthNumber-(d.y*12+d.m-1);
+   const d=parseJ(h.date);if(!d||faToEn(h.date)<firstBuy)return;
+   const k=d.y*12+d.m-1,delta=currentMonth-k;
    if(delta<0||delta>=period||!(h.cost>0&&h.shares>0&&h.price>0))return;
-   const k=d.y*12+d.m-1,old=byMonth.get(k);
-   if(!old||old.date<=h.date){const amount=h.shares*h.price*(1-(h.fee||0)/100)-h.cost;
-     byMonth.set(k,{name:activeSymbol,date:h.date,month:`${MONTH_NAMES[d.m-1]} ${enToFa(d.y)}`,profit:amount/h.cost,amount});}
+   const old=byMonth.get(k);
+   if(!old||old.date<=h.date){
+     const amount=h.shares*h.price*(1-(h.fee||0)/100)-h.cost;
+     byMonth.set(k,{name:activeSymbol,date:h.date,month:`${MONTH_NAMES[d.m-1]} ${enToFa(d.y)}`+(k===currentMonth?' (تا امروز)':''),profit:amount/h.cost,amount,monthIndex:k,provisional:k===currentMonth});
+   }
  });
- return [...byMonth.entries()].sort((a,b)=>a[0]-b[0]).map(([,v])=>v);
+ return [...byMonth.values()].sort((a,b)=>a.monthIndex-b.monthIndex);
 }
 function drawChart(){
  const canvas=$("#profitChart"),empty=$("#chartEmpty"),tip=$("#chartTooltip"),items=monthlyChartData();chartPoints=[];
  if(!canvas||!empty)return;
- if(!items.length){empty.textContent='هنوز سابقۀ قیمت پایانی ثبت نشده است. از این پس، با ثبت قیمت پایانی، داده‌های ماهانه ذخیره می‌شوند.';empty.style.display='grid';canvas.style.display='none';tip.style.display='none';return}
+ if(!items.length){empty.textContent='برای این نماد هنوز سابقۀ معتبر قیمت پس از اولین خرید ثبت نشده است. قیمت پایانی را ثبت کنید تا ماه جاری نمایش داده شود.';empty.style.display='grid';canvas.style.display='none';tip.style.display='none';return}
  empty.style.display='none';canvas.style.display='block';
  const dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;if(w<=0||h<=0)return;
  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
@@ -104,10 +113,10 @@ function drawChart(){
  [low,(low+high)/2,high].forEach(v=>{ctx.beginPath();ctx.moveTo(pad.l,y(v));ctx.lineTo(w-pad.r,y(v));ctx.stroke();ctx.fillText(`${v.toLocaleString('fa-IR',{maximumFractionDigits:1})}٪`,pad.l-8,y(v)+4)});
  ctx.strokeStyle='#8a96a4';ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(pad.l,y(0));ctx.lineTo(w-pad.r,y(0));ctx.stroke();ctx.setLineDash([]);
  const x=i=>pad.l+(i+.5)*cw/items.length;
- ctx.strokeStyle='#1769c2';ctx.lineWidth=2.5;ctx.beginPath();items.forEach((p,i)=>{const xx=x(i),yy=y(p.profit*100);if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy)});ctx.stroke();
+ ctx.strokeStyle='#1769c2';ctx.lineWidth=2.5;ctx.beginPath();items.forEach((p,i)=>{const xx=x(i),yy=y(p.profit*100);if(i===0||p.monthIndex!==items[i-1].monthIndex+1)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy)});ctx.stroke();
  items.forEach((p,i)=>{const xx=x(i),yy=y(p.profit*100);ctx.beginPath();ctx.arc(xx,yy,5,0,Math.PI*2);ctx.fillStyle=p.profit>=0?'#138a4b':'#c62828';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();chartPoints.push({x:xx,y:yy,w:16,h:16,data:p});ctx.fillStyle='#737d88';ctx.textAlign='center';ctx.fillText(p.month,xx,h-15)});
 }
-$("#profitChart").addEventListener('mousemove',e=>{const c=e.currentTarget,r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,p=chartPoints.find(q=>Math.abs(x-q.x)<=12&&Math.abs(y-q.y)<=12);if(!p){$("#chartTooltip").style.display='none';return}const d=p.data;const sign=d.amount>0?'+':d.amount<0?'−':'';$("#chartTooltip").innerHTML=`<strong>${escapeHtml(d.month)}</strong><span>آخرین ثبت قیمت: ${enToFa(d.date)}</span><span class="tip-amount">سود/زیان تحقق‌نیافته: <b class="${d.amount>0?'positive':d.amount<0?'negative':''}">${sign}${fmt(Math.abs(d.amount))} ریال</b></span><span class="tip-profit">درصد: <b class="${d.profit>0?'positive':d.profit<0?'negative':''}">${fmtPct(d.profit)}</b></span>`;const tip=$("#chartTooltip");tip.style.display='block';tip.style.left=Math.min(Math.max(8,x+12),c.clientWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.min(Math.max(8,y+12),c.clientHeight-tip.offsetHeight-8)+'px'});
+$("#profitChart").addEventListener('mousemove',e=>{const c=e.currentTarget,r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,p=chartPoints.find(q=>Math.abs(x-q.x)<=12&&Math.abs(y-q.y)<=12);if(!p){$("#chartTooltip").style.display='none';return}const d=p.data;const sign=d.amount>0?'+':d.amount<0?'−':'';$("#chartTooltip").innerHTML=`<strong>${escapeHtml(d.month)}</strong><span>آخرین ثبت قیمت: ${enToFa(d.date)}${d.provisional?" (ماه جاری، موقت)":""}</span><span class="tip-amount">سود/زیان تحقق‌نیافته: <b class="${d.amount>0?'positive':d.amount<0?'negative':''}">${sign}${fmt(Math.abs(d.amount))} ریال</b></span><span class="tip-profit">درصد: <b class="${d.profit>0?'positive':d.profit<0?'negative':''}">${fmtPct(d.profit)}</b></span>`;const tip=$("#chartTooltip");tip.style.display='block';tip.style.left=Math.min(Math.max(8,x+12),c.clientWidth-tip.offsetWidth-8)+'px';tip.style.top=Math.min(Math.max(8,y+12),c.clientHeight-tip.offsetHeight-8)+'px'});
 $("#profitChart").addEventListener('mouseleave',()=>$("#chartTooltip").style.display='none');
 function setChartPeriod(value){app.ui=app.ui||{};app.ui.chartPeriod=Number(value);document.querySelectorAll('[data-chart-period]').forEach(b=>{const selected=Number(b.dataset.chartPeriod)===app.ui.chartPeriod;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});drawChart();saveApp()}
 document.querySelectorAll('[data-chart-period]').forEach(b=>b.addEventListener('click',()=>setChartPeriod(b.dataset.chartPeriod)));
