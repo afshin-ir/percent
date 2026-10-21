@@ -324,3 +324,18 @@ body>header:focus-within{
     inset-block-start:0!important;
   }
 }
+
+/* v016: hit regions follow the exact colored donut segments; native multiline SVG titles */
+#overviewView .overview-donut{position:relative}
+#overviewView .overview-donut-hitareas{position:absolute;inset:0;width:100%;height:100%;z-index:2;overflow:visible}
+#overviewView .overview-donut-hole{position:relative;z-index:1}
+
+/* v017: colored two-line monetary tooltip for monthly returns */
+#overviewView .overview-monthly-wrap{position:relative}
+#overviewView .overview-monthly-tooltip{position:absolute;z-index:5;bottom:30px;left:50%;transform:translateX(-50%);direction:rtl;min-width:225px;max-width:calc(100% - 16px);padding:10px 13px;border:1px solid #d8e1eb;border-radius:10px;background:#fff;box-shadow:0 6px 20px rgba(28,45,72,.15);pointer-events:none;font-size:12px;line-height:1.9}
+#overviewView .overview-monthly-tooltip[hidden]{display:none}
+#overviewView .overview-monthly-tooltip strong,#overviewView .overview-monthly-tooltip span{display:block}
+#overviewView .overview-monthly-tooltip .positive{color:#129455}
+#overviewView .overview-monthly-tooltip .negative{color:#d83b45}
+#overviewView .overview-monthly-tooltip .neutral{color:#566477}
+#overviewView .overview-monthly-bar:focus-visible rect{stroke:#2463ac;stroke-width:2}

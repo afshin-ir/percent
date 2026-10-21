@@ -262,7 +262,20 @@ function overviewAllocationChart(d){
   let acc=0;
   const colors=parts.map((x,i)=>{const start=acc;acc+=x.value/sum*100;return `${overviewPalette[i%overviewPalette.length]} ${start}% ${acc}%`}).join(',');
   const legend=parts.map((x,i)=>`<li><span class="allocation-key" style="background:${overviewPalette[i%overviewPalette.length]}"></span><span class="allocation-name">${escapeHtml(x.name)}</span><b dir="ltr">${(x.value/sum*100).toLocaleString('fa-IR',{maximumFractionDigits:1})}٪</b></li>`).join('');
-  return `<div class="overview-donut-layout"><div class="overview-donut" style="background:conic-gradient(${colors})" role="img" aria-label="نمودار ترکیب دارایی‌ها"><div class="overview-donut-hole"><small>دارایی کل (ریال)</small><strong>${dashboardNumber(sum)}</strong></div></div><ul class="overview-allocation-legend">${legend}</ul></div>`;
+  // Transparent SVG sectors give each color its own accessible, multiline native tooltip.
+  // The visible ring remains the existing CSS conic gradient.
+  const circumference=2*Math.PI*87.5;
+  let offset=0;
+  const segments=parts.map(x=>{
+    const ratio=x.value/sum;
+    const length=ratio*circumference;
+    const pct=(ratio*100).toLocaleString('fa-IR',{maximumFractionDigits:1});
+    const tip=escapeHtml(`${x.name}\\nدرصد: ${pct}٪\\nمقدار: ${dashboardNumber(x.value)} ریال`);
+    const segment=`<circle cx="110" cy="110" r="87.5" fill="none" stroke="transparent" stroke-width="33" stroke-dasharray="${length} ${circumference-length}" stroke-dashoffset="${-offset}" transform="rotate(-90 110 110)" style="pointer-events:stroke"><title>${tip}</title></circle>`;
+    offset+=length;
+    return segment;
+  }).join('');
+  return `<div class="overview-donut-layout"><div class="overview-donut" style="background:conic-gradient(${colors})" role="img" aria-label="نمودار ترکیب دارایی‌ها"><svg class="overview-donut-hitareas" viewBox="0 0 220 220" aria-label="جزئیات ترکیب دارایی‌ها">${segments}</svg><div class="overview-donut-hole"><small>دارایی کل (ریال)</small><strong>${dashboardNumber(sum)}</strong></div></div><ul class="overview-allocation-legend">${legend}</ul></div>`;
 }
 function overviewMonthlyChart(symbolName,period){
   const items=monthlyChartData(symbolName,period);
@@ -270,8 +283,16 @@ function overviewMonthlyChart(symbolName,period){
   const values=items.map(x=>x.profit*100),lo=Math.min(0,...values),hi=Math.max(0,...values),maxAbs=Math.max(1,Math.abs(lo),Math.abs(hi));
   const top=8,bottom=155,mid=top+(hi/(hi-lo||1))*(bottom-top),plotHeight=bottom-top;
   const spacing=660/items.length,barW=Math.min(94,spacing*.70);
-  const bars=items.map((x,i)=>{const v=x.profit*100;const yy=top+(hi-v)/(hi-lo||1)*plotHeight;const y=Math.min(mid,yy);const h=Math.max(2,Math.abs(yy-mid));const cx=55+(i+.5)*spacing;const label=escapeHtml(x.month);const title=escapeHtml(`${x.month}: ${v.toLocaleString('fa-IR',{maximumFractionDigits:2})}٪؛ ${dashboardNumber(x.amount)} ریال`);return `<g><title>${title}</title><rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${v>=0?'#39b987':'#e17979'}"/><text x="${cx}" y="181" text-anchor="middle">${label}</text></g>`}).join('');
-  return `<svg class="overview-monthly-svg" viewBox="0 0 770 200" role="img" aria-label="نمودار درصد سود و زیان خریدهای ماهانهٔ نماد ${escapeHtml(symbolName)}"><line x1="40" x2="745" y1="${mid}" y2="${mid}" stroke="#aebdce" stroke-dasharray="4 4"/><text x="35" y="${mid-5}" text-anchor="end">۰٪</text>${bars}</svg>`;
+  const bars=items.map((x,i)=>{
+    const v=x.profit*100,yy=top+(hi-v)/(hi-lo||1)*plotHeight,y=Math.min(mid,yy),h=Math.max(2,Math.abs(yy-mid)),cx=55+(i+.5)*spacing;
+    const label=escapeHtml(x.month);
+    const percent=`${v>0?'+':''}${v.toLocaleString('fa-IR',{maximumFractionDigits:2})}٪`;
+    const amount=`${x.amount>0?'+':''}${dashboardNumber(x.amount)} ریال`;
+    const tip=escapeHtml(`${x.month}؛ درصد سود/زیان: ${percent}؛ سود/زیان ریالی: ${amount}`);
+    return `<g class="overview-monthly-bar" tabindex="0" role="img" aria-label="${tip}" data-month="${label}" data-percent="${escapeHtml(percent)}" data-amount="${escapeHtml(amount)}" data-amount-sign="${x.amount>0?'positive':x.amount<0?'negative':'neutral'}" data-percent-sign="${v>0?'positive':v<0?'negative':'neutral'}"><rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" rx="3" fill="${v>=0?'#39b987':'#e17979'}"/><text x="${cx}" y="181" text-anchor="middle">${label}</text></g>`;
+  }).join('');
+  return `<div class="overview-monthly-wrap"><svg class="overview-monthly-svg" viewBox="0 0 770 200" role="img" aria-label="نمودار درصد سود و زیان خریدهای ماهانهٔ نماد ${escapeHtml(symbolName)}"><line x1="40" x2="745" y1="${mid}" y2="${mid}" stroke="#aebdce" stroke-dasharray="4 4"/><text x="35" y="${mid-5}" text-anchor="end">۰٪</text>${bars}</svg><div class="overview-monthly-tooltip" role="tooltip" hidden></div></div>`;
+
 }
 function renderOverview(){const salesPanel=document.querySelector("#salesPanel");if(salesPanel)salesPanel.style.display="none";
   const d=portfolioData();
@@ -336,6 +357,20 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     renderOverview();
   };
   const chartSymbolInput=$("#overviewChartSymbol"),chartPeriodInput=$("#overviewChartPeriod");
+  const monthlyWrap=el.querySelector(".overview-monthly-wrap");
+  if(monthlyWrap){
+    const tooltip=monthlyWrap.querySelector(".overview-monthly-tooltip");
+    const show=(bar)=>{
+      tooltip.innerHTML=`<strong>${bar.dataset.month}</strong><span class="${bar.dataset.percentSign}">درصد سود/زیان: <b dir="ltr">${bar.dataset.percent}</b></span><span class="${bar.dataset.amountSign}">سود/زیان ریالی: <b dir="ltr">${bar.dataset.amount}</b></span>`;
+      tooltip.hidden=false;
+    };
+    monthlyWrap.querySelectorAll(".overview-monthly-bar").forEach(bar=>{
+      bar.addEventListener("pointerenter",()=>show(bar));
+      bar.addEventListener("pointerleave",()=>{tooltip.hidden=true});
+      bar.addEventListener("focus",()=>show(bar));
+      bar.addEventListener("blur",()=>{tooltip.hidden=true});
+    });
+  }
   if(chartSymbolInput)chartSymbolInput.onchange=()=>{app.ui.overviewChartSymbol=chartSymbolInput.value;renderOverview();saveApp()};
   if(chartPeriodInput)chartPeriodInput.onchange=()=>{app.ui.overviewChartPeriod=Number(chartPeriodInput.value);renderOverview();saveApp()};
   $("#addSymbolBtn").onclick=addNewSymbol;
