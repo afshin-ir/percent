@@ -203,3 +203,14 @@ body>header .actions{align-items:center}
 @media(max-width:900px){.overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){body>header{position:sticky;top:0;padding:10px 14px;min-height:0;gap:8px}body>header h1{font-size:18px}body>header .brand-mark{width:34px;height:34px;font-size:20px}body>header .actions{gap:5px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:3px}body>header .actions button{flex:none;font-size:11px;padding:7px 9px}.app-shell{margin-top:10px!important}#overviewView{gap:10px}.overview-top.panel{padding:13px}.overview-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.overview-top .overview-card{min-height:96px;padding:10px 7px}.overview-top .overview-card.overview-card-primary{min-height:105px}.overview-top .overview-card strong{font-size:16px}.overview-top .simple-finance-grid{grid-template-columns:1fr}.overview-top .finance-total-assets strong{font-size:24px}#overviewView>.overview-panel{padding:12px!important}.overview-panel>.panel-head{flex-direction:row;align-items:center}}
 @media(max-width:380px){.overview-cards{grid-template-columns:1fr}}
+
+/* پرداخت نهایی نمای کلی: فاصلۀ کمتر، آیکون‌های خطی و اعداد با جهت یکسان */
+.overview-top .overview-head{padding:0 0 9px!important;margin:0 0 10px!important}
+.overview-top .overview-head h2{margin-top:1px}
+.overview-top .overview-head p{margin-top:2px;line-height:1.55}
+.overview-top .overview-cards{margin-bottom:12px}
+.overview-top .overview-card .card-icon{display:grid;place-items:center;width:29px;height:29px;margin:0 auto 7px;border-radius:8px;background:#eef4fb;color:#4b7198}
+.overview-top .overview-card .card-icon svg{width:17px;height:17px;display:block;flex:none}
+.dashboard-signed{display:inline-block;direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-variant-numeric:tabular-nums}
+.overview-top .overview-card strong,.overview-table .overview-numeric{font-variant-numeric:tabular-nums}
+@media(max-width:700px){.overview-top .overview-head{padding-bottom:8px!important;margin-bottom:9px!important}}

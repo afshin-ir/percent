@@ -211,6 +211,25 @@ function portfolioData(){
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
 }
+// نمایش یکنواخت علامت عدد در محیط راست‌به‌چپ؛ بدون تغییر مقدار عددی.
+function dashboardSigned(v,percent=false){
+  if(v===null||v===undefined||!Number.isFinite(v))return "—";
+  const sign=v>0?"+":v<0?"−":"";
+  const amount=percent?fmtPct(Math.abs(v)):dashboardNumber(Math.abs(v));
+  return `<span class="dashboard-signed" dir="ltr">${sign}${amount}</span>`;
+}
+// SVGهای خطی یکدست، بدون وابستگی به کتابخانه یا فونت آیکون.
+function overviewIcon(name){
+  const paths={
+    wallet:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18"/><path d="M16 14h2"/><path d="M7 5V3h11"/>',
+    layers:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h8"/>',
+    trend:'<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    percent:'<circle cx="7" cy="7" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 19 19 5"/>',
+    check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    chart:'<path d="M4 20V4M4 20h16"/><path d="M8 16v-4M13 16V8M18 16V5"/>'
+  };
+  return `<span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name]||paths.chart}</svg></span>`;
+}
 // مرتب‌سازی صرفاً نمایشی است؛ ترتیب دلخواه نمادها را تغییر نمی‌دهد.
 let overviewSort={key:null,direction:1};
 const overviewSortColumns=[
@@ -251,7 +270,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
   const rows=orderedItems.map(x=>{
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
     const over=x.share!==null&&x.allocationLimit>0&&x.share*100>x.allocationLimit;
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span>${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${x.profit===null?"—":(x.profit>0?"+":"")+dashboardNumber(x.profit)}</td><td class="overview-numeric">${dashboardNumber(x.realized)}</td><td class="overview-numeric ${profitClass}">${x.ret===null?"—":dashboardPct(x.ret)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span>${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.profit)}</td><td class="overview-numeric ${x.realized>0?"positive":x.realized<0?"negative":""}">${dashboardSigned(x.realized)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.ret,true)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
   }).join("");
   const totalCombined=d.profit===null?null:d.profit+d.realized;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
@@ -259,12 +278,12 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     <div class="overview-top panel">
     <div class="overview-head"><div><span class="eyebrow">وضعیت کل سبد</span><h2>نمای کلی</h2><p>خلاصه‌ای از وضعیت همهٔ نمادهای موجود در سبد</p></div></div>
     <section class="overview-cards">
-      <div class="overview-card card-blue overview-card-primary"><i class="card-icon">◉</i><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
-      <div class="overview-card card-indigo"><i class="card-icon">▣</i><span>بهای تمام‌شدۀ سهام موجود</span><strong>${dashboardValue(d.investment)}</strong></div>
-      <div class="overview-card card-green overview-card-primary ${profitClass}"><i class="card-icon">↗</i><span>سود/زیان تحقق‌نیافته</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
-      <div class="overview-card card-purple overview-card-primary ${profitClass}"><i class="card-icon">%</i><span>بازدهی تحقق‌نیافته</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
-      <div class="overview-card card-green"><span>سود/زیان تحقق‌یافته</span><strong>${dashboardValue(d.realized)}</strong></div>
-      <div class="overview-card card-blue"><span>سود/زیان مجموع</span><strong>${dashboardValue(totalCombined)}</strong></div>
+      <div class="overview-card card-blue overview-card-primary">${overviewIcon("wallet")}<span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
+      <div class="overview-card card-indigo">${overviewIcon("layers")}<span>بهای تمام‌شدۀ سهام موجود</span><strong>${dashboardValue(d.investment)}</strong></div>
+      <div class="overview-card card-green overview-card-primary ${profitClass}">${overviewIcon("trend")}<span>سود/زیان تحقق‌نیافته</span><strong>${dashboardSigned(d.profit)}</strong></div>
+      <div class="overview-card card-purple overview-card-primary ${profitClass}">${overviewIcon("percent")}<span>بازدهی تحقق‌نیافته</span><strong>${dashboardSigned(d.ret,true)}</strong></div>
+      <div class="overview-card card-green ${d.realized>0?"positive":d.realized<0?"negative":""}">${overviewIcon("check")}<span>سود/زیان تحقق‌یافته</span><strong>${dashboardSigned(d.realized)}</strong></div>
+      <div class="overview-card card-blue ${totalCombined>0?"positive":totalCombined<0?"negative":""}">${overviewIcon("chart")}<span>سود/زیان مجموع</span><strong>${dashboardSigned(totalCombined)}</strong></div>
     </section>
     <section class="panel portfolio-cash-panel">
       <h2>💼 دارایی و قدرت خرید</h2>
