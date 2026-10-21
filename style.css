@@ -214,3 +214,23 @@ body>header .actions{align-items:center}
 .dashboard-signed{display:inline-block;direction:ltr;unicode-bidi:isolate;white-space:nowrap;font-variant-numeric:tabular-nums}
 .overview-top .overview-card strong,.overview-table .overview-numeric{font-variant-numeric:tabular-nums}
 @media(max-width:700px){.overview-top .overview-head{padding-bottom:8px!important;margin-bottom:9px!important}}
+
+/* v012: جایگاه پایدار سربرگ، بدون پوشاندن محتوای صفحه */
+:root{--site-header-height:76px}
+body{padding-top:var(--site-header-height)}
+body>header,body>header:is(:hover,:focus-within){position:fixed!important;inset-block-start:0!important;inset-inline:0!important;width:100%;z-index:80;transform:none!important;margin:0!important}
+/* جلوگیری از جمع‌شدن عدد سود و زیان در کارت‌ها */
+.overview-top .overview-card strong,.overview-top .overview-card strong .dashboard-signed{font-size:clamp(18px,1.65vw,23px)!important;font-weight:750!important;line-height:1.55;letter-spacing:0;max-width:100%}
+.overview-top .overview-card strong{display:block;overflow-wrap:anywhere}
+/* ستون نماد: چیدمان سه‌جزئی ثابت در محدودهٔ یک سلول */
+.overview-table th:first-child,.overview-table td.overview-symbol-cell{min-width:174px;width:174px;max-width:174px}
+.overview-table td.overview-symbol-cell{padding:6px 8px!important;overflow:hidden}
+.overview-symbol-layout{display:grid;grid-template-columns:15px minmax(0,1fr) 30px;align-items:center;column-gap:5px;direction:rtl;width:100%;min-width:0;height:30px}
+.overview-symbol-layout .overview-drag-handle{grid-column:1;margin:0;letter-spacing:-2px;line-height:1;text-align:center;display:block;min-width:0;cursor:grab}
+.overview-symbol-layout .overview-symbol{grid-column:2;display:flex;align-items:center;justify-content:flex-start;gap:7px;min-width:0;width:100%;padding:3px 1px;direction:rtl;text-align:right;overflow:hidden}
+.overview-symbol-layout .overview-symbol-mark{flex:0 0 11px;width:11px;height:11px}
+.overview-symbol-layout .overview-symbol-name{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overview-symbol-layout .overview-delete-symbol{grid-column:3;display:grid;place-items:center;width:30px;height:30px;min-width:30px;margin:0;padding:0;justify-self:center;align-self:center;line-height:1;box-sizing:border-box}
+.overview-symbol-layout .overview-delete-symbol:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+@media(hover:none),(pointer:coarse){.overview-symbol-layout .overview-delete-symbol{opacity:1}}
+@media(max-width:700px){.overview-top .overview-card strong,.overview-top .overview-card strong .dashboard-signed{font-size:16px!important}}

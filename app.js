@@ -270,7 +270,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
   const rows=orderedItems.map(x=>{
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
     const over=x.share!==null&&x.allocationLimit>0&&x.share*100>x.allocationLimit;
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span>${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.profit)}</td><td class="overview-numeric ${x.realized>0?"positive":x.realized<0?"negative":""}">${dashboardSigned(x.realized)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.ret,true)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.profit)}</td><td class="overview-numeric ${x.realized>0?"positive":x.realized<0?"negative":""}">${dashboardSigned(x.realized)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.ret,true)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
   }).join("");
   const totalCombined=d.profit===null?null:d.profit+d.realized;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
@@ -294,7 +294,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     </section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
     </div>
-    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
   const brokerInput=$("#brokerBuyingPower");
   brokerInput.oninput=()=>{
     app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;
@@ -466,3 +466,13 @@ function editCash(existing){
 }
 function validSales(symbol,sales){return costLedger({...symbol,sales}).valid;}
 function editSale(existing){const tr=[...rowsEl.querySelectorAll(".sale-tr")].find(row=>row.dataset.id===existing.id);tr?.querySelector(".shares")?.focus()}
+
+// جایگاه ثابت سربرگ؛ ارتفاع واقعی آن در فضاگیری صفحه لحاظ می‌شود.
+(function keepHeaderSpace(){
+  const siteHeader=document.querySelector('body > header');
+  if(!siteHeader)return;
+  const sync=()=>document.documentElement.style.setProperty('--site-header-height',`${Math.ceil(siteHeader.getBoundingClientRect().height)}px`);
+  sync();
+  if(typeof ResizeObserver!=='undefined')new ResizeObserver(sync).observe(siteHeader);
+  window.addEventListener('resize',sync);
+})();
