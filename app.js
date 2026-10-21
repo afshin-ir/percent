@@ -270,12 +270,12 @@ function overviewAllocationChart(d){
     const ratio=x.value/sum;
     const length=ratio*circumference;
     const pct=(ratio*100).toLocaleString('fa-IR',{maximumFractionDigits:1});
-    const tip=escapeHtml(`${x.name}\\nدرصد: ${pct}٪\\nمقدار: ${dashboardNumber(x.value)} ریال`);
-    const segment=`<circle cx="110" cy="110" r="87.5" fill="none" stroke="transparent" stroke-width="33" stroke-dasharray="${length} ${circumference-length}" stroke-dashoffset="${-offset}" transform="rotate(-90 110 110)" style="pointer-events:stroke"><title>${tip}</title></circle>`;
+    const tip=escapeHtml(`${x.name}؛ ${pct}٪؛ ${dashboardNumber(x.value)} ریال`);
+    const segment=`<circle class="overview-donut-segment" cx="110" cy="110" r="87.5" fill="none" stroke="transparent" stroke-width="33" stroke-dasharray="${length} ${circumference-length}" stroke-dashoffset="${-offset}" transform="rotate(-90 110 110)" style="pointer-events:stroke" tabindex="0" role="img" aria-label="${tip}" data-name="${escapeHtml(x.name)}" data-percent="${escapeHtml(pct)}٪" data-amount="${escapeHtml(dashboardNumber(x.value))} ریال"></circle>`;
     offset+=length;
     return segment;
   }).join('');
-  return `<div class="overview-donut-layout"><div class="overview-donut" style="background:conic-gradient(${colors})" role="img" aria-label="نمودار ترکیب دارایی‌ها"><svg class="overview-donut-hitareas" viewBox="0 0 220 220" aria-label="جزئیات ترکیب دارایی‌ها">${segments}</svg><div class="overview-donut-hole"><small>دارایی کل (ریال)</small><strong>${dashboardNumber(sum)}</strong></div></div><ul class="overview-allocation-legend">${legend}</ul></div>`;
+  return `<div class="overview-donut-layout"><div class="overview-donut" style="background:conic-gradient(${colors})" role="img" aria-label="نمودار ترکیب دارایی‌ها"><svg class="overview-donut-hitareas" viewBox="0 0 220 220" aria-label="جزئیات ترکیب دارایی‌ها">${segments}</svg><div class="overview-donut-hole"><small>دارایی کل (ریال)</small><strong>${dashboardNumber(sum)}</strong></div></div><ul class="overview-allocation-legend">${legend}</ul><div class="overview-donut-tooltip" role="tooltip" hidden></div></div>`;
 }
 function overviewMonthlyChart(symbolName,period){
   const items=monthlyChartData(symbolName,period);
@@ -357,18 +357,48 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     renderOverview();
   };
   const chartSymbolInput=$("#overviewChartSymbol"),chartPeriodInput=$("#overviewChartPeriod");
+  // Tooltips are positioned by the pointer, not centered in the chart.
+  const positionChartTooltip=(container,tooltip,event)=>{
+    const rect=container.getBoundingClientRect();
+    const x=event.clientX-rect.left,y=event.clientY-rect.top;
+    const w=tooltip.offsetWidth,h=tooltip.offsetHeight;
+    const left=Math.min(Math.max(8,x+14),Math.max(8,rect.width-w-8));
+    const top=y-h-12>=8?y-h-12:Math.min(y+18,Math.max(8,rect.height-h-8));
+    tooltip.style.left=`${left}px`;
+    tooltip.style.top=`${top}px`;
+  };
   const monthlyWrap=el.querySelector(".overview-monthly-wrap");
   if(monthlyWrap){
     const tooltip=monthlyWrap.querySelector(".overview-monthly-tooltip");
-    const show=(bar)=>{
-      tooltip.innerHTML=`<strong>${bar.dataset.month}</strong><span class="${bar.dataset.percentSign}">درصد سود/زیان: <b dir="ltr">${bar.dataset.percent}</b></span><span class="${bar.dataset.amountSign}">سود/زیان ریالی: <b dir="ltr">${bar.dataset.amount}</b></span>`;
+    const show=(bar,event)=>{
+      tooltip.innerHTML=`<strong>${bar.dataset.month}</strong><span>درصد سود/زیان: <b class="${bar.dataset.percentSign}" dir="ltr">${bar.dataset.percent}</b></span><span>سود/زیان ریالی: <b class="${bar.dataset.amountSign}" dir="ltr">${bar.dataset.amount}</b></span>`;
       tooltip.hidden=false;
+      if(event)positionChartTooltip(monthlyWrap,tooltip,event);
+      else {tooltip.style.left='8px';tooltip.style.top='8px';}
     };
     monthlyWrap.querySelectorAll(".overview-monthly-bar").forEach(bar=>{
-      bar.addEventListener("pointerenter",()=>show(bar));
+      bar.addEventListener("pointerenter",event=>show(bar,event));
+      bar.addEventListener("pointermove",event=>positionChartTooltip(monthlyWrap,tooltip,event));
       bar.addEventListener("pointerleave",()=>{tooltip.hidden=true});
       bar.addEventListener("focus",()=>show(bar));
       bar.addEventListener("blur",()=>{tooltip.hidden=true});
+    });
+  }
+  const allocationWrap=el.querySelector(".overview-donut-layout");
+  if(allocationWrap){
+    const tooltip=allocationWrap.querySelector(".overview-donut-tooltip");
+    const show=(segment,event)=>{
+      tooltip.innerHTML=`<span>${segment.dataset.name} — <b class="positive" dir="ltr">${segment.dataset.percent}</b></span><span>مقدار: <b class="positive" dir="ltr">${segment.dataset.amount}</b></span>`;
+      tooltip.hidden=false;
+      if(event)positionChartTooltip(allocationWrap,tooltip,event);
+      else {tooltip.style.left='8px';tooltip.style.top='8px';}
+    };
+    allocationWrap.querySelectorAll(".overview-donut-segment").forEach(segment=>{
+      segment.addEventListener("pointerenter",event=>show(segment,event));
+      segment.addEventListener("pointermove",event=>positionChartTooltip(allocationWrap,tooltip,event));
+      segment.addEventListener("pointerleave",()=>{tooltip.hidden=true});
+      segment.addEventListener("focus",()=>show(segment));
+      segment.addEventListener("blur",()=>{tooltip.hidden=true});
     });
   }
   if(chartSymbolInput)chartSymbolInput.onchange=()=>{app.ui.overviewChartSymbol=chartSymbolInput.value;renderOverview();saveApp()};

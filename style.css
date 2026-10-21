@@ -339,3 +339,47 @@ body>header:focus-within{
 #overviewView .overview-monthly-tooltip .negative{color:#d83b45}
 #overviewView .overview-monthly-tooltip .neutral{color:#566477}
 #overviewView .overview-monthly-bar:focus-visible rect{stroke:#2463ac;stroke-width:2}
+
+
+/* v018: tooltips track the pointer; only numeric values carry profit colors */
+#overviewView .overview-monthly-tooltip,
+#overviewView .overview-donut-tooltip{
+  position:absolute;
+  inset:auto;
+  left:8px;
+  top:8px;
+  bottom:auto;
+  transform:none;
+  z-index:20;
+  width:max-content;
+  min-width:0;
+  max-width:min(320px,calc(100% - 16px));
+  box-sizing:border-box;
+  direction:rtl;
+  padding:9px 12px;
+  border:1px solid #d8e1eb;
+  border-radius:9px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(28,45,72,.15);
+  pointer-events:none;
+  font-size:12px;
+  line-height:1.85;
+  color:#334155;
+  text-align:right;
+}
+#overviewView .overview-donut-layout{position:relative}
+#overviewView .overview-monthly-tooltip[hidden],
+#overviewView .overview-donut-tooltip[hidden]{display:none}
+#overviewView .overview-monthly-tooltip strong,
+#overviewView .overview-monthly-tooltip span,
+#overviewView .overview-donut-tooltip span{display:block;color:#334155;font-weight:400}
+#overviewView .overview-monthly-tooltip strong{font-weight:600}
+#overviewView .overview-monthly-tooltip b,
+#overviewView .overview-donut-tooltip b{font-weight:700;display:inline-block;unicode-bidi:isolate}
+#overviewView .overview-monthly-tooltip b.positive,
+#overviewView .overview-donut-tooltip b.positive{color:#129455}
+#overviewView .overview-monthly-tooltip b.negative,
+#overviewView .overview-donut-tooltip b.negative{color:#d83b45}
+#overviewView .overview-monthly-tooltip b.neutral,
+#overviewView .overview-donut-tooltip b.neutral{color:#566477}
+#overviewView .overview-donut-segment:focus-visible{stroke:#a9c8ef}
