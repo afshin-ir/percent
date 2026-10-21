@@ -259,23 +259,23 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     <div class="overview-top panel">
     <div class="overview-head"><div><span class="eyebrow">وضعیت کل سبد</span><h2>نمای کلی</h2><p>خلاصه‌ای از وضعیت همهٔ نمادهای موجود در سبد</p></div></div>
     <section class="overview-cards">
-      <div class="overview-card card-blue"><i class="card-icon">◉</i><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
+      <div class="overview-card card-blue overview-card-primary"><i class="card-icon">◉</i><span>ارزش فعلی سبد</span><strong>${dashboardValue(d.current)}</strong></div>
       <div class="overview-card card-indigo"><i class="card-icon">▣</i><span>بهای تمام‌شدۀ سهام موجود</span><strong>${dashboardValue(d.investment)}</strong></div>
-      <div class="overview-card card-green ${profitClass}"><i class="card-icon">↗</i><span>سود/زیان تحقق‌نیافته</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
-      <div class="overview-card card-purple ${profitClass}"><i class="card-icon">%</i><span>بازدهی تحقق‌نیافته</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
+      <div class="overview-card card-green overview-card-primary ${profitClass}"><i class="card-icon">↗</i><span>سود/زیان تحقق‌نیافته</span><strong>${d.profit===null?"—":(d.profit>0?"+":"")+dashboardNumber(d.profit)}</strong></div>
+      <div class="overview-card card-purple overview-card-primary ${profitClass}"><i class="card-icon">%</i><span>بازدهی تحقق‌نیافته</span><strong>${d.ret===null?"—":dashboardPct(d.ret)}</strong></div>
       <div class="overview-card card-green"><span>سود/زیان تحقق‌یافته</span><strong>${dashboardValue(d.realized)}</strong></div>
       <div class="overview-card card-blue"><span>سود/زیان مجموع</span><strong>${dashboardValue(totalCombined)}</strong></div>
     </section>
     <section class="panel portfolio-cash-panel">
       <h2>💼 دارایی و قدرت خرید</h2>
       <div class="finance-grid simple-finance-grid">
-        <div class="finance-stat"><span>🏦 دارایی کل</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong><small>ریال؛ ارزش روز سهام + قدرت خرید دستی</small></div>
-        <div class="finance-stat"><label for="brokerBuyingPower">💳 قدرت خرید کارگزاری (ریال)</label><input id="brokerBuyingPower" type="text" inputmode="numeric" autocomplete="off" value="${app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower)}" placeholder="مبلغ قدرت خرید را وارد کنید"><small>مبلغ را مطابق کارگزاری وارد کنید؛ خودکار تغییر نمی‌کند.</small></div>
+        <div class="finance-stat finance-total-assets"><span>🏦 دارایی کل</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong><small>ریال؛ ارزش روز سهام + قدرت خرید دستی</small></div>
+        <div class="finance-stat finance-buying-power"><label for="brokerBuyingPower">💳 قدرت خرید کارگزاری (ریال)</label><input id="brokerBuyingPower" type="text" inputmode="numeric" autocomplete="off" value="${app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower)}" placeholder="مبلغ قدرت خرید را وارد کنید"><small>مبلغ را مطابق کارگزاری وارد کنید؛ خودکار تغییر نمی‌کند.</small></div>
       </div>
     </section>
     <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
     </div>
-    <section class="panel overview-panel"><div class="panel-head"><div><h2>نمادها</h2><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty">هنوز نمادی ثبت نشده است.</td></tr>`}</tbody></table></div></section>`;
   const brokerInput=$("#brokerBuyingPower");
   brokerInput.oninput=()=>{
     app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;
