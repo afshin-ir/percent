@@ -134,3 +134,25 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .overview-table tbody tr:hover .overview-delete-symbol{opacity:1}
 .back-overview{white-space:nowrap;color:#1769c2}
 @media(max-width:700px){.overview-panel>.panel-head{flex-direction:row;align-items:center}}
+
+/* نمای کلی یکپارچه و متوازن پس از حذف نوار کناری */
+.app-shell{width:100%;max-width:1480px;margin:22px auto;padding:0 clamp(12px,2.4vw,28px);display:block;direction:rtl}
+.app-shell>main{width:100%;min-width:0}
+#overviewView{width:100%;display:flex;flex-direction:column;gap:16px}
+.overview-top.panel{padding:clamp(16px,2vw,26px);margin:0!important;border-radius:17px}
+.overview-head{padding:0 0 18px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.overview-head h2{font-size:24px;margin-top:3px}
+.overview-head p{font-size:12px;line-height:1.8}
+.overview-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));justify-content:stretch;gap:13px;margin-bottom:18px}
+.overview-card{width:100%;min-width:0;min-height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:17px 14px;border-radius:13px}
+.overview-card strong{max-width:100%;overflow-wrap:anywhere;font-size:clamp(17px,1.6vw,22px);line-height:1.6}
+.overview-top .portfolio-cash-panel{margin:0 0 15px!important;padding:18px;border-radius:13px;box-shadow:none;background:#f9fbfe}
+.overview-top .portfolio-cash-panel>h2{font-size:17px;margin-bottom:12px}
+.overview-top .simple-finance-grid{margin:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.overview-top .finance-stat{min-height:105px;justify-content:center;padding:15px 18px;background:#fff}
+.overview-top .finance-stat input{max-width:100%;text-align:right}
+.overview-stats{display:flex;flex-wrap:wrap;gap:8px 24px;padding:12px 2px 0;margin:0;border-top:1px solid var(--line);line-height:1.9}
+#overviewView>.overview-panel{margin:0!important;padding:clamp(14px,1.6vw,22px);border-radius:17px}
+@media(max-width:900px){.overview-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.app-shell{margin-top:12px;padding:0 10px}#overviewView{gap:12px}.overview-top.panel{padding:14px}.overview-head h2{font-size:21px}.overview-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.overview-card{min-height:104px;padding:12px 7px}.overview-card strong{font-size:16px}.overview-top .simple-finance-grid{grid-template-columns:1fr}.overview-top .portfolio-cash-panel{padding:12px}.overview-stats{gap:4px 13px;font-size:11px}}
+@media(max-width:380px){.overview-cards{grid-template-columns:1fr}.overview-card{min-height:90px}}
