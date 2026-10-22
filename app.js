@@ -333,11 +333,6 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
         <div class="overview-card overview-assets-card">${overviewIcon('check')}<span>دارایی کل (ریال)</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong></div>
         <div class="overview-card ${totalCombined>0?'positive':totalCombined<0?'negative':''}">${overviewIcon('trend')}<span>سود/زیان مجموع (ریال)</span><strong>${dashboardSigned(totalCombined)}</strong></div>
       </section>
-      <section class="overview-cards overview-secondary-cards" aria-label="شاخص‌های تکمیلی">
-        <div class="overview-card ${profitClass}">${overviewIcon('percent')}<span>بازدهی تحقق‌نیافته</span><strong>${dashboardSigned(d.ret,true)}</strong></div>
-        <div class="overview-card ${d.realized>0?'positive':d.realized<0?'negative':''}">${overviewIcon('check')}<span>سود/زیان تحقق‌یافته (ریال)</span><strong>${dashboardSigned(d.realized)}</strong></div>
-        <div class="overview-card ${profitClass}">${overviewIcon('chart')}<span>سود/زیان تحقق‌نیافته (ریال)</span><strong>${dashboardSigned(d.profit)}</strong></div>
-      </section>
       <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
     </div>
     <div class="overview-chart-grid">
