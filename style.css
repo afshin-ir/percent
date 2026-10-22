@@ -421,3 +421,8 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 .site-footer-github:focus-visible{outline:3px solid #78afe6;outline-offset:3px}
 .site-footer-arrow{font-size:16px;line-height:1;opacity:.75}
 @media(max-width:600px){.site-footer-inner{justify-content:center;text-align:center}.site-footer-name{justify-content:center}}
+
+.overview-price-entry{display:flex;align-items:center;gap:5px;padding:3px 4px 0 20px;font-size:10px;line-height:1.4;color:var(--muted,#64748b);white-space:nowrap}
+.overview-price-entry span{flex:0 0 auto}
+.overview-price-input{flex:1 1 auto;min-width:0;width:82px;height:25px;padding:2px 6px;border:1px solid var(--line,#dbe2ea);border-radius:6px;background:var(--surface,#fff);color:var(--ink,#1e293b);font:inherit;font-size:11px;text-align:left;direction:ltr}
+.overview-price-input:focus{outline:2px solid var(--blue,#1769c2);outline-offset:1px}
