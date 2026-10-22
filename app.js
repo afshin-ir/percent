@@ -1,5 +1,5 @@
 const KEY="stocks-web-v4";const LEGACY_KEYS=["stocks-web-v3","stocks-web-v2"];const DEFAULT_SYMBOL="عیار";
-const $=s=>document.querySelector(s),rowsEl=$("#rows"),priceEl=$("#currentPrice");let app=loadApp(),activeSymbol=app.activeSymbol||Object.keys(app.symbols)[0]||"",calendarTarget=null,calendarCursor=null,chartPoints=[];
+const $=s=>document.querySelector(s),rowsEl=$("#rows"),priceEl=$("#currentPrice");let app=loadApp(),activeSymbol=app.activeSymbol||Object.keys(app.symbols)[0]||"",calendarTarget=null,calendarCursor=null,chartPoints=[];let tsetmcRefreshPromise=null,overviewPriceMetricsRefresh=()=>{};
 function id(){return crypto.randomUUID?.()||String(Date.now()+Math.random())}function faToEn(s){return String(s??"").replace(/[۰-۹]/g,c=>"۰۱۲۳۴۵۶۷۸۹".indexOf(c)).replace(/[٠-٩]/g,c=>"٠١٢٣٤٥٦٧٨٩".indexOf(c)).replace(/٫/g,".").replace(/٬/g,"").replace(/,/g,"").replace(/[\/\\-]/g,"/")}function enToFa(s){return String(s??"").replace(/\d/g,d=>"۰۱۲۳۴۵۶۷۸۹"[d])}function num(v){return Number(faToEn(v).replace(/[^0-9.+-]/g,""))||0}function fmt(v){return Math.round(v||0).toLocaleString("fa-IR")}function fmtPct(v){return (v*100).toLocaleString("fa-IR",{minimumFractionDigits:2,maximumFractionDigits:2})+"٪"}
 function formatThousands(v){const raw=faToEn(v).replace(/[^0-9]/g,"");return raw?enToFa(Number(raw).toLocaleString("en-US").replace(/,/g,"٬")):""}function formatDecimal(v){let s=faToEn(v).replace(/[^0-9.]/g,"");const p=s.split(".");if(p.length>2)s=p[0]+"."+p.slice(1).join("");return enToFa(s.replace(".","٫"))}
 function div(a,b){return Math.floor(a/b)}function jalaliToGregorian(jy,jm,jd){jy=+jy;jm=+jm;jd=+jd;const epBase=jy-(jy>=0?474:473),epYear=474+((epBase%2820+2820)%2820),md=jm<=7?(jm-1)*31:(jm-1)*30+6,days=jd+md+div(epYear*682-110,2816)+(epYear-1)*365+div(epBase,2820)*1029983+(1948320-1);let gy=400*div(days,146097),rem=days%146097;if(rem>=36524){gy+=100*div(--rem,36524);rem%=36524;if(rem>=365)rem++}let yday=rem;gy+=4*div(yday,1461);yday%=1461;if(yday>=366){gy+=div(yday-1,365);yday=(yday-1)%365}let gd=yday+1;const leap=(gy%4===0&&gy%100!==0)||gy%400===0,sal=leap?[31,29,31,30,31,30,31,31,30,31,30,31]:[31,28,31,30,31,30,31,31,30,31,30,31];let gm=1;while(gd>sal[gm-1]){gd-=sal[gm-1];gm++}return {gy,gm,gd,date:new Date(Date.UTC(gy,gm-1,gd))}}
@@ -9,7 +9,7 @@ function jalaliDuration(startDate,endDate=currentJalali()){const s=parseJ(startD
 function formatJalaliDuration(d){if(!d)return "";const parts=[];if(d.years)parts.push(`${enToFa(d.years)} سال`);if(d.months)parts.push(`${enToFa(d.months)} ماه`);if(d.days||!parts.length)parts.push(`${enToFa(d.days)} روز`);return parts.join(" و ")}
 function updatePurchasesTitle(){const dates=[...active().rows,...(active().sales||[])].map(r=>parseJ(r.date)).filter(Boolean);const el=$("#purchasesTitle");if(!el)return;if(!dates.length){el.textContent="خریدها/فروش‌ها";return}const first=dates.reduce((min,d)=>d.date<min.date?d:min);el.textContent=`خریدها/فروش‌ها در ${formatJalaliDuration(jalaliDuration(jalaliString(first.y,first.m,first.d)))} گذشته`;}
 function jalaliString(y,m,d){return `${y}/${String(m).padStart(2,"0")}/${String(d).padStart(2,"0")}`} 
-function makeSymbol(rows=[],price=0,fee=.12,allocationLimit=0){return{price,fee,allocationLimit,sales:[],priceHistory:[],rows:(rows||[]).map(x=>({id:id(),date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}function normalizeApp(a){if(!a)return{version:5,activeSymbol:"",portfolioCash:0,brokerBuyingPower:null,monthlyDepositTarget:0,cashTransactions:[],symbolOrder:[],ui:{overview:true},symbols:{}};if(a?.symbols&&typeof a.symbols==="object"){const names=Array.isArray(a.symbolOrder)?a.symbolOrder.filter(n=>a.symbols[n]):Object.keys(a.symbols);Object.keys(a.symbols).forEach(n=>{if(!names.includes(n))names.push(n);const raw=a.symbols[n]||{};a.symbols[n]={price:Number(raw.price)||0,fee:raw.fee!=null?Number(raw.fee):Number(a.sellFee??.12),allocationLimit:Number(raw.allocationLimit)||0,sales:Array.isArray(raw.sales)?raw.sales.filter(r=>Number(r.shares)||Number(r.price)||Number(r.commission)):[],priceHistory:Array.isArray(raw.priceHistory)?raw.priceHistory.filter(h=>h&&/^\d{4}\/\d{2}\/\d{2}$/.test(h.date)&&Number.isFinite(Number(h.price))&&Number(h.price)>0).map(h=>({date:h.date,price:Number(h.price),shares:Number(h.shares)||0,cost:Number(h.cost)||0,fee:Number(h.fee)||0})):[],rows:Array.isArray(raw.rows)?raw.rows.filter(r=>Number(r.shares)||Number(r.price)||Number(r.commission)).map(r=>({id:r.id||id(),date:r.date||"",shares:Number(r.shares)||0,price:Number(r.price)||0,commission:Number(r.commission)||0})):[]}});a.symbolOrder=names;a.portfolioCash=Number(a.portfolioCash)||0;a.brokerBuyingPower=a.brokerBuyingPower==null?null:Number(a.brokerBuyingPower);if(!Number.isFinite(a.brokerBuyingPower))a.brokerBuyingPower=null;a.monthlyDepositTarget=Number(a.monthlyDepositTarget)||0;a.cashTransactions=Array.isArray(a.cashTransactions)?a.cashTransactions:[];a.version=5;a.ui=a.ui||{};if(!names.length){a.activeSymbol="";a.ui.overview=true}return a}const symbols={[DEFAULT_SYMBOL]:makeSymbol()};if(a?.price!=null)symbols[DEFAULT_SYMBOL].price=+a.price||713145;if(Array.isArray(a?.rows)&&a.rows.length)symbols[DEFAULT_SYMBOL].rows=a.rows.map(r=>({id:id(),date:r.date||"",shares:+r.shares||0,price:+r.price||0,commission:+r.commission||0}));symbols[DEFAULT_SYMBOL].fee=Number(a?.fee??.12);return{version:5,activeSymbol:DEFAULT_SYMBOL,portfolioCash:0,brokerBuyingPower:null,monthlyDepositTarget:Number(a?.monthlyDepositTarget)||0,cashTransactions:[],symbolOrder:[DEFAULT_SYMBOL],ui:{chartSymbol:DEFAULT_SYMBOL},symbols}}
+function makeSymbol(rows=[],price=0,fee=.12,allocationLimit=0){return{price,fee,allocationLimit,tsetmcCode:"",tsetmcLastFetchedAt:0,sales:[],priceHistory:[],rows:(rows||[]).map(x=>({id:id(),date:x[0],shares:x[1],price:x[2],commission:x[3]}))}}function normalizeApp(a){if(!a)return{version:5,activeSymbol:"",portfolioCash:0,brokerBuyingPower:null,monthlyDepositTarget:0,cashTransactions:[],symbolOrder:[],ui:{overview:true},symbols:{}};if(a?.symbols&&typeof a.symbols==="object"){const names=Array.isArray(a.symbolOrder)?a.symbolOrder.filter(n=>a.symbols[n]):Object.keys(a.symbols);Object.keys(a.symbols).forEach(n=>{if(!names.includes(n))names.push(n);const raw=a.symbols[n]||{};a.symbols[n]={price:Number(raw.price)||0,tsetmcCode:String(raw.tsetmcCode||""),tsetmcLastFetchedAt:Number(raw.tsetmcLastFetchedAt)||0,fee:raw.fee!=null?Number(raw.fee):Number(a.sellFee??.12),allocationLimit:Number(raw.allocationLimit)||0,sales:Array.isArray(raw.sales)?raw.sales.filter(r=>Number(r.shares)||Number(r.price)||Number(r.commission)):[],priceHistory:Array.isArray(raw.priceHistory)?raw.priceHistory.filter(h=>h&&/^\d{4}\/\d{2}\/\d{2}$/.test(h.date)&&Number.isFinite(Number(h.price))&&Number(h.price)>0).map(h=>({date:h.date,price:Number(h.price),shares:Number(h.shares)||0,cost:Number(h.cost)||0,fee:Number(h.fee)||0})):[],rows:Array.isArray(raw.rows)?raw.rows.filter(r=>Number(r.shares)||Number(r.price)||Number(r.commission)).map(r=>({id:r.id||id(),date:r.date||"",shares:Number(r.shares)||0,price:Number(r.price)||0,commission:Number(r.commission)||0})):[]}});a.symbolOrder=names;a.portfolioCash=Number(a.portfolioCash)||0;a.brokerBuyingPower=a.brokerBuyingPower==null?null:Number(a.brokerBuyingPower);if(!Number.isFinite(a.brokerBuyingPower))a.brokerBuyingPower=null;a.monthlyDepositTarget=Number(a.monthlyDepositTarget)||0;a.cashTransactions=Array.isArray(a.cashTransactions)?a.cashTransactions:[];a.version=5;a.ui=a.ui||{};if(!names.length){a.activeSymbol="";a.ui.overview=true}return a}const symbols={[DEFAULT_SYMBOL]:makeSymbol()};if(a?.price!=null)symbols[DEFAULT_SYMBOL].price=+a.price||713145;if(Array.isArray(a?.rows)&&a.rows.length)symbols[DEFAULT_SYMBOL].rows=a.rows.map(r=>({id:id(),date:r.date||"",shares:+r.shares||0,price:+r.price||0,commission:+r.commission||0}));symbols[DEFAULT_SYMBOL].fee=Number(a?.fee??.12);return{version:5,activeSymbol:DEFAULT_SYMBOL,portfolioCash:0,brokerBuyingPower:null,monthlyDepositTarget:Number(a?.monthlyDepositTarget)||0,cashTransactions:[],symbolOrder:[DEFAULT_SYMBOL],ui:{chartSymbol:DEFAULT_SYMBOL},symbols}}
 function loadApp(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)return normalizeApp(v);for(const k of LEGACY_KEYS){const old=JSON.parse(localStorage.getItem(k)||"null");if(old)return normalizeApp(old)}}catch{}return normalizeApp(null)}function saveApp(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;localStorage.setItem(KEY,JSON.stringify(app))}function active(){return app.symbols[activeSymbol]}function sortRows(){active().rows.sort((a,b)=>{const ad=parseJ(a.date),bd=parseJ(b.date);if(!ad&&!bd)return 0;if(!ad)return -1;if(!bd)return 1;return bd.date-ad.date})}
 function renderSymbols(){const el=$("#symbolList");el.innerHTML="";(app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{const s=app.symbols[name];if(!s)return;const b=document.createElement("button");b.className="symbol-btn"+(name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;const pd=portfolioData(), item=pd.items.find(x=>x.name===name), over=item?.share!==null&&item?.allocationLimit>0&&item.share*100>item.allocationLimit;
     b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span><span class="symbol-share ${over?"negative":""}">${item?.share===null||item?.share===undefined?"—":dashboardPct(item.share)}</span>`;b.onclick=()=>switchSymbol(name);b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbols();saveApp()};el.appendChild(b)})}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function switchSymbol(name){activeSymbol=name;sortRows();updatePurchasesTitle();renderSymbols();render();saveApp()}
@@ -30,7 +30,7 @@ function estimatedSaleNet(symbol, shares, closing){const gross=Number(shares)*Nu
 function updateTableOnly(){const s=active(),price=s.price;let ts=0,tc=0;rowsEl.querySelectorAll("tr:not(.sale-tr)").forEach(tr=>{const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c;tr.querySelector(".cost").textContent=fmt(cost);tr.querySelector(".gain-amount").textContent="—";const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);const profit=cost&&price?(estimatedSaleNet(s,sh,price)-cost)/cost:null;const pe=tr.querySelector(".profit");pe.textContent=profit===null?"—":fmtPct(profit);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);ts+=sh;tc+=cost});$("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&price?(estimatedSaleNet(s,ts,price)/tc)-1:null;const tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=s.rows.length?"none":"block";drawChart()}
 function render(){sortRows();updatePurchasesTitle();const s=active();$("#activeSymbolTitle").textContent=activeSymbol;priceEl.value=s.price?formatThousands(s.price):"";$("#allocationLimit").value=formatDecimal(s.allocationLimit||0);rowsEl.innerHTML="";s.rows.forEach(r=>addRow(r));$("#tableEmpty").style.display=s.rows.length?"none":"block";updateTableOnly();$("#lastUpdated").textContent=`${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;drawChart();setDataFieldTabOrder()}
 priceEl.oninput=()=>{active().price=num(priceEl.value);updateTableOnly();saveApp()};priceEl.onblur=()=>{priceEl.value=formatThousands(priceEl.value);active().price=num(priceEl.value);recordPriceSnapshot();render();saveApp()};$("#sellFee").oninput=()=>{active().fee=Math.max(0,num($("#sellFee").value));updateTableOnly();saveApp()};$("#sellFee").onblur=()=>{$("#sellFee").value=formatDecimal(active().fee??0);render();saveApp()};$("#allocationLimit").oninput=()=>{active().allocationLimit=num($("#allocationLimit").value);updateTableOnly();saveApp()};$("#allocationLimit").onblur=()=>{$("#allocationLimit").value=formatDecimal($("#allocationLimit").value);active().allocationLimit=num($("#allocationLimit").value);render();saveApp()};$("#addBtn").onclick=()=>{active().rows.unshift({id:id(),date:"",shares:0,price:0,commission:0});render();saveApp();setTimeout(()=>rowsEl.querySelector(".date-input")?.click(),0)};$("#emptyAddBtn").onclick=()=>$("#addBtn").click();
-function addNewSymbol(){const name=prompt("نام نماد را وارد کنید:");if(!name)return;const n=name.trim();if(!n||app.symbols[n])return alert("این نماد قبلاً وجود دارد.");app.symbols[n]=makeSymbol([],0,.12);app.symbolOrder.push(n);activeSymbol=n;overviewMode=false;app.ui=app.ui||{};app.ui.overview=false;renderSymbols();render();saveApp()}$("#renameSymbolBtn").onclick=()=>{const old=activeSymbol,n=prompt("نام جدید نماد را وارد کنید:",old)?.trim();if(!n||n===old)return;if(app.symbols[n])return alert("این نام قبلاً وجود دارد.");app.symbols[n]=app.symbols[old];delete app.symbols[old];const i=app.symbolOrder.indexOf(old);if(i>=0)app.symbolOrder[i]=n;if(app.ui?.chartSymbol===old)app.ui.chartSymbol=n;activeSymbol=n;renderSymbols();render();saveApp()};function deleteSymbolByName(name){
+function addNewSymbol(){const name=prompt("نام نماد را وارد کنید:");if(!name)return;const n=name.trim();if(!n||app.symbols[n])return alert("این نماد قبلاً وجود دارد.");app.symbols[n]=makeSymbol([],0,.12);app.symbolOrder.push(n);activeSymbol=n;overviewMode=false;app.ui=app.ui||{};app.ui.overview=false;renderSymbols();render();saveApp();setTimeout(()=>refreshTsetmcPrices(true),0)}$("#renameSymbolBtn").onclick=()=>{const old=activeSymbol,n=prompt("نام جدید نماد را وارد کنید:",old)?.trim();if(!n||n===old)return;if(app.symbols[n])return alert("این نام قبلاً وجود دارد.");app.symbols[n]=app.symbols[old];delete app.symbols[old];const i=app.symbolOrder.indexOf(old);if(i>=0)app.symbolOrder[i]=n;if(app.ui?.chartSymbol===old)app.ui.chartSymbol=n;activeSymbol=n;renderSymbols();render();saveApp()};function deleteSymbolByName(name){
   const symbol=app.symbols[name];if(!symbol)return;
   if(Object.keys(app.symbols).length===1){alert("حداقل یک نماد باید باقی بماند.");return;}
   const buys=(symbol.rows||[]).length,sales=(symbol.sales||[]).length;
@@ -294,6 +294,77 @@ function overviewMonthlyChart(symbolName,period){
   return `<div class="overview-monthly-wrap"><svg class="overview-monthly-svg" viewBox="0 0 770 200" role="img" aria-label="نمودار درصد سود و زیان خریدهای ماهانهٔ نماد ${escapeHtml(symbolName)}"><line x1="40" x2="745" y1="${mid}" y2="${mid}" stroke="#aebdce" stroke-dasharray="4 4"/><text x="35" y="${mid-5}" text-anchor="end">۰٪</text>${bars}</svg><div class="overview-monthly-tooltip" role="tooltip" hidden></div></div>`;
 
 }
+const TSETMC_API="https://cdn.tsetmc.com/api";
+function tsetmcSymbolKey(value){return String(value||"").normalize("NFKC").replace(/[\u200c\u200e\u200f\u202a-\u202e\ufeff]/g,"").replace(/[يى]/g,"ی").replace(/ك/g,"ک").replace(/\s+/g,"").trim().toLowerCase()}
+async function tsetmcGet(path){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  try{
+    const response=await fetch(`${TSETMC_API}/${path}`,{cache:"no-store",signal:controller.signal});
+    if(!response.ok)throw new Error("network");
+    return await response.json();
+  }finally{clearTimeout(timer)}
+}
+async function resolveTsetmcCode(symbolName){
+  const payload=await tsetmcGet(`Instrument/GetInstrumentSearch/${encodeURIComponent(symbolName)}`);
+  const matches=(Array.isArray(payload?.instrumentSearch)?payload.instrumentSearch:[]).filter(item=>tsetmcSymbolKey(item.lVal18AFC)===tsetmcSymbolKey(symbolName)&&item.insCode);
+  if(matches.length!==1)throw new Error(matches.length?"ambiguous":"not-found");
+  return String(matches[0].insCode);
+}
+function findTsetmcClosingPrice(value,depth=0){
+  if(!value||depth>6)return null;
+  if(Array.isArray(value)){for(const item of value){const found=findTsetmcClosingPrice(item,depth+1);if(found!==null)return found}return null}
+  if(typeof value!=="object")return null;
+  const candidate=Number(String(value.pClosing??"").replace(/,/g,""));
+  if(Number.isFinite(candidate)&&candidate>0)return candidate;
+  for(const item of Object.values(value)){const found=findTsetmcClosingPrice(item,depth+1);if(found!==null)return found}
+  return null;
+}
+async function refreshTsetmcPrices(force=false){
+  if(tsetmcRefreshPromise)return tsetmcRefreshPromise;
+  const names=(app.symbolOrder||Object.keys(app.symbols)).filter(name=>app.symbols[name]);
+  const status=$("#tsetmcPriceStatus"),button=$("#refreshTsetmcPricesBtn");
+  if(!names.length){if(status)status.textContent="ابتدا نمادی اضافه کنید.";return{updated:0,errors:[]}}
+  const now=Date.now(),due=names.filter(name=>force||!app.symbols[name].tsetmcLastFetchedAt||now-app.symbols[name].tsetmcLastFetchedAt>10*60*1000);
+  if(!due.length){if(status)status.textContent="قیمت‌ها در ده دقیقۀ اخیر دریافت شده‌اند.";return{updated:0,errors:[]}}
+  if(status)status.textContent="در حال دریافت قیمت‌ها از TSETMC…";
+  if(button)button.disabled=true;
+  tsetmcRefreshPromise=(async()=>{
+    let updated=0;const errors=[];
+    for(const name of due){
+      const symbol=app.symbols[name],focused=document.activeElement;
+      const focusedOverviewPrice=focused?.classList?.contains("overview-price-input")&&focused.closest(".overview-row")?.dataset.symbol===name;
+      const focusedSymbolPrice=!overviewMode&&name===activeSymbol&&focused===priceEl;
+      if(focusedOverviewPrice||focusedSymbolPrice)continue;
+      try{
+        if(!symbol.tsetmcCode)symbol.tsetmcCode=await resolveTsetmcCode(name);
+        const payload=await tsetmcGet(`ClosingPrice/GetClosingPriceInfo/${encodeURIComponent(symbol.tsetmcCode)}`);
+        const closing=findTsetmcClosingPrice(payload?.closingPriceInfo??payload);
+        if(!(closing>0))throw new Error("missing-price");
+        symbol.price=closing;
+        symbol.tsetmcLastFetchedAt=Date.now();
+        updated++;
+      }catch(error){errors.push({name,error:error?.message||"network"})}
+    }
+    if(updated){
+      if(overviewMode)overviewPriceMetricsRefresh();
+      else updateTableOnly();
+      if(!overviewMode&&app.symbols[activeSymbol]&&document.activeElement!==priceEl)priceEl.value=app.symbols[activeSymbol].price?formatThousands(app.symbols[activeSymbol].price):"";
+      renderSymbols();
+      if(typeof window.saveAppQuietly==="function")window.saveAppQuietly();else saveApp();
+    }
+    if(status){
+      if(errors.some(item=>item.error==="network"||item.error==="AbortError"))status.textContent="اتصال به TSETMC برقرار نشد؛ قیمت‌های قبلی حفظ شدند.";
+      else if(errors.some(item=>item.error==="ambiguous"))status.textContent="برای بعضی نمادها چند نتیجۀ هم‌نام پیدا شد؛ قیمت آن‌ها تغییر نکرد.";
+      else if(errors.some(item=>item.error==="not-found"))status.textContent="برای بعضی نمادها نماد دقیقی پیدا نشد؛ قیمت آن‌ها تغییر نکرد.";
+      else if(errors.length)status.textContent="قیمت پایانی از پاسخ TSETMC دریافت نشد؛ قیمت قبلی حفظ شد.";
+      else if(updated)status.textContent=`قیمت ${enToFa(updated)} نماد از TSETMC دریافت شد.`;
+      else status.textContent="قیمت تازه‌ای برای دریافت پیدا نشد.";
+    }
+    return{updated,errors};
+  })();
+  try{return await tsetmcRefreshPromise}
+  finally{tsetmcRefreshPromise=null;if(button)button.disabled=false}
+}
 function bindOverviewTooltips(root){
   const position=(container,tooltip,event)=>{
     const rect=container.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top,w=tooltip.offsetWidth,h=tooltip.offsetHeight;
@@ -357,7 +428,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>ترکیب دارایی‌ها</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><p>سهم هر نماد از ارزش روز دارایی‌ها، به‌همراه قدرت خرید</p></div><div id="overviewAllocation">${overviewAllocationChart(d)}</div></section>
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>سود و زیان خریدهای ماهانه</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><div class="overview-chart-controls"><label for="overviewChartSymbol">نماد</label><select id="overviewChartSymbol" aria-label="نماد نمودار ماهانه">${monthlyOptions}</select><label for="overviewChartPeriod">بازه</label><select id="overviewChartPeriod" aria-label="بازهٔ نمودار ماهانه"><option value="3" ${chartPeriod===3?'selected':''}>۳ ماه</option><option value="6" ${chartPeriod===6?'selected':''}>۶ ماه</option><option value="12" ${chartPeriod===12?'selected':''}>۱۲ ماه</option></select></div></div><div id="overviewMonthly">${selectedChartSymbol?overviewMonthlyChart(selectedChartSymbol,chartPeriod):'<p class="overview-chart-empty">هنوز نمادی ثبت نشده است.</p>'}</div><p class="overview-chart-note">عملکرد خریدهای نماد انتخاب‌شده تا امروز؛ فروش‌ها با روش FIFO لحاظ می‌شوند. این نمودار قیمت تاریخی نیست.</p></section>
     </div>
-    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div class="price-refresh-controls"><button type="button" id="refreshTsetmcPricesBtn" class="small-btn">↻ دریافت قیمت‌ها از TSETMC</button><span id="tsetmcPriceStatus" role="status" aria-live="polite">قیمت پایانی به‌طور خودکار دریافت می‌شود.</span></div><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
   const updatePriceMetrics=()=>{
     const latest=portfolioData();
     latest.items.forEach(item=>{
@@ -380,6 +451,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     $("#overviewMonthly").innerHTML=overviewMonthlyChart($("#overviewChartSymbol")?.value,Number($("#overviewChartPeriod")?.value)||6);
     bindOverviewTooltips(el);
   };
+  overviewPriceMetricsRefresh=updatePriceMetrics;
   el.querySelectorAll(".overview-price-input").forEach(input=>{
     const row=input.closest(".overview-row"),name=row?.dataset.symbol;
     input.oninput=()=>{
@@ -402,6 +474,8 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
       if(next){next.focus();next.select()}
     };
   });
+  const refreshTsetmcButton=$("#refreshTsetmcPricesBtn");
+  if(refreshTsetmcButton)refreshTsetmcButton.onclick=()=>refreshTsetmcPrices(true);
   const brokerInput=$("#brokerBuyingPower");
   brokerInput.oninput=()=>{
     app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;
@@ -623,3 +697,10 @@ function editCash(existing){
 function validSales(symbol,sales){return costLedger({...symbol,sales}).valid;}
 function editSale(existing){const tr=[...rowsEl.querySelectorAll(".sale-tr")].find(row=>row.dataset.id===existing.id);tr?.querySelector(".shares")?.focus()}
 
+
+if(!window.__percentTsetmcRefreshStarted){
+  window.__percentTsetmcRefreshStarted=true;
+  setTimeout(()=>refreshTsetmcPrices(false),900);
+  setInterval(()=>{if(document.visibilityState==="visible")refreshTsetmcPrices(false)},15*60*1000);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshTsetmcPrices(false)});
+}
