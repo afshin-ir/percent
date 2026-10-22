@@ -429,7 +429,3 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 .overview-performance{display:inline-flex;align-items:baseline;gap:12px;direction:ltr;white-space:nowrap}
 .overview-performance-percent{font-size:.88em;opacity:.86}
 
-.price-refresh-controls{display:flex;align-items:center;gap:8px;margin-inline-start:auto;min-width:0}
-#tsetmcPriceStatus{font-size:11px;color:var(--muted,#64748b);white-space:normal}
-#refreshTsetmcPricesBtn:disabled{opacity:.65;cursor:wait}
-@media(max-width:700px){.price-refresh-controls{flex-wrap:wrap}#tsetmcPriceStatus{flex-basis:100%}}
