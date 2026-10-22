@@ -410,3 +410,14 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 #rows input:focus-visible{outline:2px solid #5d9ad7;outline-offset:1px}
 .overview-table .column-hidden{display:none!important}
 @media(max-width:700px){.chart-fullscreen{inset:2vh 2vw!important;width:96vw!important;height:96vh!important;padding:12px!important}.column-options-panel{right:auto;left:0}}
+
+/* v022 — project footer */
+.site-footer{margin:28px auto 0;padding:20px clamp(16px,4vw,40px) 26px;border-top:1px solid #e1e9f2;background:linear-gradient(180deg,#f9fbfe 0%,#f1f6fc 100%);color:#65768a;font-size:13px}
+.site-footer-inner{max-width:1280px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.site-footer-name{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap}
+.site-footer-dot{color:#9db2c9}
+.site-footer-github{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:#31577f;font-weight:700;border:1px solid #d8e4f0;background:#fff;border-radius:999px;padding:9px 14px;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s}
+.site-footer-github:hover{background:#eaf3ff;border-color:#9abfe7;box-shadow:0 4px 12px #204d7717;transform:translateY(-1px)}
+.site-footer-github:focus-visible{outline:3px solid #78afe6;outline-offset:3px}
+.site-footer-arrow{font-size:16px;line-height:1;opacity:.75}
+@media(max-width:600px){.site-footer-inner{justify-content:center;text-align:center}.site-footer-name{justify-content:center}}
