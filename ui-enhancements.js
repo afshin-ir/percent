@@ -7,7 +7,7 @@ const saveWithoutIndicator=saveApp;privacy.addEventListener('click',()=>{setPriv
 const status=document.getElementById('saveIndicator');let hideStatus;
 // Wrap the existing persistence function; do not change its data or key.
 const oldSave=saveApp;saveApp=function(){oldSave();status.classList.add('is-visible');clearTimeout(hideStatus);hideStatus=setTimeout(()=>status.classList.remove('is-visible'),1700)};
-const labels=['نماد','قیمت پایانی','تعداد سهم','بهای تمام‌شده','ارزش روز','سود/زیان','بازدهی','سهم از سبد'];
+const labels=['نماد','قیمت پایانی','تعداد سهم','بهای تمام‌شده','ارزش روز','سود/زیان','سهم از سبد'];
 // Remove the old realized column from saved hidden-column indices once.
 if(Number(ui().overviewColumnsLayout||1)<2){
   const oldHidden=Array.isArray(ui().hiddenColumns)?ui().hiddenColumns:[];
@@ -21,6 +21,13 @@ if(Number(ui().overviewColumnsLayout||1)<3){
   const currentHidden=Array.isArray(ui().hiddenColumns)?ui().hiddenColumns:[];
   ui().hiddenColumns=[...new Set(currentHidden.filter(Number.isInteger).filter(index=>index>=0).map(index=>index>=1?index+1:index))];
   ui().overviewColumnsLayout=3;
+  saveWithoutIndicator();
+}
+// Remove the old return column from saved visibility settings once.
+if(Number(ui().overviewColumnsLayout||1)<4){
+  const currentHidden=Array.isArray(ui().hiddenColumns)?ui().hiddenColumns:[];
+  ui().hiddenColumns=[...new Set(currentHidden.filter(Number.isInteger).filter(index=>index>=0&&index!==6).map(index=>index>6?index-1:index))];
+  ui().overviewColumnsLayout=4;
   saveWithoutIndicator();
 }
 function setupColumns(){const table=document.querySelector('.overview-table'),panel=document.getElementById('columnOptionsPanel'),btn=document.getElementById('columnOptionsToggle');if(!table||!panel||!btn)return;const hidden=Array.isArray(ui().hiddenColumns)?ui().hiddenColumns:[];panel.innerHTML=labels.map((name,i)=>`<label><input type="checkbox" data-column="${i}" ${!hidden.includes(i)?'checked':''} ${i===0?'disabled':''}><span>${name}</span></label>`).join('');const apply=()=>{const current=Array.isArray(ui().hiddenColumns)?ui().hiddenColumns:[];table.querySelectorAll('tr').forEach(tr=>Array.from(tr.children).forEach((cell,i)=>cell.classList.toggle('column-hidden',current.includes(i))))};apply();btn.onclick=()=>{panel.hidden=!panel.hidden;btn.setAttribute('aria-expanded',String(!panel.hidden))};panel.onchange=e=>{const n=Number(e.target.dataset.column);if(!Number.isInteger(n)||n===0)return;const set=new Set(ui().hiddenColumns||[]);e.target.checked?set.delete(n):set.add(n);ui().hiddenColumns=[...set];apply();saveApp()};}
