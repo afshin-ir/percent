@@ -425,3 +425,6 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 .overview-price-cell{min-width:128px;width:128px}
 .overview-price-cell .overview-price-input{display:block;width:112px;min-width:0;height:30px;margin:0 auto;padding:4px 7px;border:1px solid var(--line,#dbe2ea);border-radius:6px;background:var(--surface,#fff);color:var(--ink,#1e293b);font:inherit;font-size:12px;text-align:left;direction:ltr}
 .overview-price-cell .overview-price-input:focus{outline:2px solid var(--blue,#1769c2);outline-offset:1px}
+
+.overview-performance{display:inline-flex;align-items:baseline;gap:12px;direction:ltr;white-space:nowrap}
+.overview-performance-percent{font-size:.88em;opacity:.86}
