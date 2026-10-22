@@ -329,26 +329,28 @@ async function refreshTsetmcPrices(force=false){
   if(status)status.textContent="در حال دریافت قیمت‌ها از TSETMC…";
   if(button)button.disabled=true;
   tsetmcRefreshPromise=(async()=>{
-    let updated=0;const errors=[];
+    let updated=0,changedMapping=false;const errors=[];
     for(const name of due){
       const symbol=app.symbols[name],focused=document.activeElement;
       const focusedOverviewPrice=focused?.classList?.contains("overview-price-input")&&focused.closest(".overview-row")?.dataset.symbol===name;
       const focusedSymbolPrice=!overviewMode&&name===activeSymbol&&focused===priceEl;
       if(focusedOverviewPrice||focusedSymbolPrice)continue;
       try{
-        if(!symbol.tsetmcCode)symbol.tsetmcCode=await resolveTsetmcCode(name);
+        if(!symbol.tsetmcCode){symbol.tsetmcCode=await resolveTsetmcCode(name);changedMapping=true;}
         const payload=await tsetmcGet(`ClosingPrice/GetClosingPriceInfo/${encodeURIComponent(symbol.tsetmcCode)}`);
         const closing=findTsetmcClosingPrice(payload?.closingPriceInfo??payload);
         if(!(closing>0))throw new Error("missing-price");
         symbol.price=closing;
         symbol.tsetmcLastFetchedAt=Date.now();
         updated++;
-      }catch(error){errors.push({name,error:error?.message||"network"})}
+      }catch(error){const message=error?.message||"network";errors.push({name,error:["ambiguous","not-found","missing-price"].includes(message)?message:"network"})}
     }
     if(updated){
       if(overviewMode)overviewPriceMetricsRefresh();
       else updateTableOnly();
       if(!overviewMode&&app.symbols[activeSymbol]&&document.activeElement!==priceEl)priceEl.value=app.symbols[activeSymbol].price?formatThousands(app.symbols[activeSymbol].price):"";
+    }
+    if(updated||changedMapping){
       renderSymbols();
       if(typeof window.saveAppQuietly==="function")window.saveAppQuietly();else saveApp();
     }
