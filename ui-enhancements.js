@@ -2,8 +2,8 @@
 (()=>{'use strict';
 const ui=()=>app.ui||(app.ui={});
 const privacy=document.getElementById('privacyToggle');
-function setPrivacy(value){ui().privacy=!!value;document.body.classList.toggle('privacy-mode',!!value);privacy.setAttribute('aria-pressed',String(!!value));privacy.textContent=value?'◉ نمایش مبالغ':'◉ پنهان‌کردن مبالغ';privacy.title=value?'نمایش دوبارۀ مبالغ':'پنهان‌کردن مبالغ';}
-privacy.addEventListener('click',()=>{setPrivacy(!ui().privacy);saveApp()});setPrivacy(ui().privacy);
+function setPrivacy(value){ui().privacy=!!value;document.body.classList.toggle('privacy-mode',!!value);privacy.setAttribute('aria-pressed',String(!!value));privacy.textContent=value?'◉ نمایش مبالغ':'◉ پنهان کردن مبالغ';privacy.title=value?'نمایش دوبارۀ مبالغ':'پنهان کردن مبالغ';}
+const saveWithoutIndicator=saveApp;privacy.addEventListener('click',()=>{setPrivacy(!ui().privacy);saveWithoutIndicator()});setPrivacy(ui().privacy);
 const status=document.getElementById('saveIndicator');let hideStatus;
 // Wrap the existing persistence function; do not change its data or key.
 const oldSave=saveApp;saveApp=function(){oldSave();status.classList.add('is-visible');clearTimeout(hideStatus);hideStatus=setTimeout(()=>status.classList.remove('is-visible'),1700)};
