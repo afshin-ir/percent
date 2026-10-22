@@ -367,11 +367,11 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
       cells[1].textContent=dashboardNumber(item.totalShares);
       cells[2].textContent=dashboardValue(item.cost);
       cells[3].textContent=dashboardValue(item.value);
-      cells[4].textContent=dashboardSigned(item.profit);
+      cells[4].innerHTML=dashboardSigned(item.profit);
       cells[4].className="overview-numeric "+profitClass;
-      cells[5].textContent=dashboardSigned(item.realized);
+      cells[5].innerHTML=dashboardSigned(item.realized);
       cells[5].className="overview-numeric "+(item.realized>0?"positive":item.realized<0?"negative":"");
-      cells[6].textContent=dashboardSigned(item.ret,true);
+      cells[6].innerHTML=dashboardSigned(item.ret,true);
       cells[6].className="overview-numeric "+profitClass;
     });
     const totalCombined=latest.profit===null?null:latest.profit+latest.realized;
