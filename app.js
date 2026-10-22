@@ -76,8 +76,8 @@ function parseCsv(text){const out=[];let row=[],cell="",quote=false;for(let i=0;
 // An observation stores the contemporaneous remaining cost basis so later edits do not
 // silently recalculate a past month's result with today's holdings.
 const MONTH_NAMES=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-function recordPriceSnapshot(){
- const s=active(),price=Number(s.price),today=currentJalali();
+function recordPriceSnapshot(symbolName=activeSymbol){
+ const s=app.symbols[symbolName]||active(),price=Number(s.price),today=currentJalali();
  if(!(price>0))return;
  const ledger=costLedger(s),date=jalaliString(today.y,today.m,today.d);
  if(!ledger.valid||ledger.shares<=0||ledger.cost<=0)return;
@@ -196,7 +196,7 @@ function portfolioData(){
     const profit=value===null?null:estimatedSaleNet(s,totalShares,s.price)-cost;
     const ret=profit!==null&&cost?profit/cost:null;
     shares+=totalShares; purchases+=rows.length; investment+=cost; if(value!==null) current+=value;
-    items.push({name,totalShares,purchases,cost,value,profit,ret,realized:ledger.realized,allocationLimit:Number(s.allocationLimit)||0});
+    items.push({name,totalShares,purchases,cost,value,profit,ret,realized:ledger.realized,price:Number(s.price)||0,allocationLimit:Number(s.allocationLimit)||0});
   });
   const buyingPower=app.brokerBuyingPower;
   const portfolioBasis=investment+(buyingPower??0);
@@ -294,6 +294,25 @@ function overviewMonthlyChart(symbolName,period){
   return `<div class="overview-monthly-wrap"><svg class="overview-monthly-svg" viewBox="0 0 770 200" role="img" aria-label="نمودار درصد سود و زیان خریدهای ماهانهٔ نماد ${escapeHtml(symbolName)}"><line x1="40" x2="745" y1="${mid}" y2="${mid}" stroke="#aebdce" stroke-dasharray="4 4"/><text x="35" y="${mid-5}" text-anchor="end">۰٪</text>${bars}</svg><div class="overview-monthly-tooltip" role="tooltip" hidden></div></div>`;
 
 }
+function bindOverviewTooltips(root){
+  const position=(container,tooltip,event)=>{
+    const rect=container.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top,w=tooltip.offsetWidth,h=tooltip.offsetHeight;
+    tooltip.style.left=`${Math.min(Math.max(8,x+14),Math.max(8,rect.width-w-8))}px`;
+    tooltip.style.top=`${y-h-12>=8?y-h-12:Math.min(y+18,Math.max(8,rect.height-h-8))}px`;
+  };
+  const monthly=root.querySelector(".overview-monthly-wrap");
+  if(monthly){
+    const tooltip=monthly.querySelector(".overview-monthly-tooltip");
+    const show=(bar,event)=>{tooltip.innerHTML=`<strong>${bar.dataset.month}</strong><span>درصد سود/زیان: <b class="${bar.dataset.percentSign}" dir="ltr">${bar.dataset.percent}</b></span><span>سود/زیان ریالی: <b class="${bar.dataset.amountSign}" dir="ltr">${bar.dataset.amount}</b></span>`;tooltip.hidden=false;if(event)position(monthly,tooltip,event);else{tooltip.style.left="8px";tooltip.style.top="8px"}};
+    monthly.querySelectorAll(".overview-monthly-bar").forEach(bar=>{bar.addEventListener("pointerenter",e=>show(bar,e));bar.addEventListener("pointermove",e=>position(monthly,tooltip,e));bar.addEventListener("pointerleave",()=>tooltip.hidden=true);bar.addEventListener("focus",()=>show(bar));bar.addEventListener("blur",()=>tooltip.hidden=true)});
+  }
+  const allocation=root.querySelector(".overview-donut-layout");
+  if(allocation){
+    const tooltip=allocation.querySelector(".overview-donut-tooltip");
+    const show=(segment,event)=>{tooltip.innerHTML=`<span>${segment.dataset.name} — <b class="positive" dir="ltr">${segment.dataset.percent}</b></span><span>مقدار: <b class="positive" dir="ltr">${segment.dataset.amount}</b></span>`;tooltip.hidden=false;if(event)position(allocation,tooltip,event);else{tooltip.style.left="8px";tooltip.style.top="8px"}};
+    allocation.querySelectorAll(".overview-donut-segment").forEach(segment=>{segment.addEventListener("pointerenter",e=>show(segment,e));segment.addEventListener("pointermove",e=>position(allocation,tooltip,e));segment.addEventListener("pointerleave",()=>tooltip.hidden=true);segment.addEventListener("focus",()=>show(segment));segment.addEventListener("blur",()=>tooltip.hidden=true)});
+  }
+}
 function renderOverview(){const salesPanel=document.querySelector("#salesPanel");if(salesPanel)salesPanel.style.display="none";
   const d=portfolioData();
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display="none"));
@@ -316,7 +335,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
   const rows=orderedItems.map(x=>{
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
     const over=x.share!==null&&x.allocationLimit>0&&x.share*100>x.allocationLimit;
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.profit)}</td><td class="overview-numeric ${x.realized>0?"positive":x.realized<0?"negative":""}">${dashboardSigned(x.realized)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.ret,true)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div><label class="overview-price-entry"><span>قیمت پایانی</span><input class="overview-price-input" type="text" inputmode="numeric" autocomplete="off" value="${x.price?formatThousands(x.price):""}" aria-label="قیمت پایانی ${escapeHtml(x.name)}" placeholder="قیمت را وارد کنید"></label></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.profit)}</td><td class="overview-numeric ${x.realized>0?"positive":x.realized<0?"negative":""}">${dashboardSigned(x.realized)}</td><td class="overview-numeric ${profitClass}">${dashboardSigned(x.ret,true)}</td><td class="overview-numeric ${over?"negative":""}">${x.share===null?"—":dashboardPct(x.share)}</td></tr>`;
   }).join("");
   const totalCombined=d.profit===null?null:d.profit+d.realized;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
@@ -327,18 +346,66 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
     <div class="overview-top panel">
       <div class="overview-head"><div><span class="eyebrow">وضعیت کل سبد</span><h2>نمای کلی</h2><p>خلاصه‌ای از وضعیت نمادها و دارایی‌ها</p></div></div>
       <section class="overview-cards overview-primary-cards" aria-label="شاخص‌های اصلی">
-        <div class="overview-card">${overviewIcon('wallet')}<span>ارزش روز سهام (ریال)</span><strong>${dashboardValue(d.current)}</strong></div>
+        <div class="overview-card">${overviewIcon('wallet')}<span>ارزش روز سهام (ریال)</span><strong id="overviewCurrentValue">${dashboardValue(d.current)}</strong></div>
         <div class="overview-card overview-buying-card">${overviewIcon('layers')}<label for="brokerBuyingPower">قدرت خرید کارگزاری (ریال)</label><input id="brokerBuyingPower" type="text" inputmode="numeric" autocomplete="off" value="${app.brokerBuyingPower===null?'':formatThousands(app.brokerBuyingPower)}" placeholder="قدرت خرید را وارد کنید"><small>ورود دستی</small></div>
         <div class="overview-card overview-assets-card">${overviewIcon('check')}<span>دارایی کل (ریال)</span><strong id="totalAssetsValue">${dashboardValue(d.totalAssets)}</strong></div>
-        <div class="overview-card ${totalCombined>0?'positive':totalCombined<0?'negative':''}">${overviewIcon('trend')}<span>سود/زیان مجموع (ریال)</span><strong>${dashboardSigned(totalCombined)}</strong></div>
+        <div class="overview-card ${totalCombined>0?'positive':totalCombined<0?'negative':''}">${overviewIcon('trend')}<span>سود/زیان مجموع (ریال)</span><strong id="totalCombinedValue">${dashboardSigned(totalCombined)}</strong></div>
       </section>
-      <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b>${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b>${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
+      <div class="overview-stats"><span><b>${dashboardNumber(d.items.length)}</b> نماد</span><span><b>${dashboardNumber(d.shares)}</b> سهم</span><span><b>${dashboardNumber(d.purchases)}</b> خرید</span><span><b id="overviewProfitableCount">${dashboardNumber(d.profitable)}</b> نماد سودده</span><span><b id="overviewLossmakingCount">${dashboardNumber(d.lossmaking)}</b> نماد زیان‌ده</span></div>
     </div>
     <div class="overview-chart-grid">
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>ترکیب دارایی‌ها</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><p>سهم هر نماد از ارزش روز دارایی‌ها، به‌همراه قدرت خرید</p></div><div id="overviewAllocation">${overviewAllocationChart(d)}</div></section>
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>سود و زیان خریدهای ماهانه</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><div class="overview-chart-controls"><label for="overviewChartSymbol">نماد</label><select id="overviewChartSymbol" aria-label="نماد نمودار ماهانه">${monthlyOptions}</select><label for="overviewChartPeriod">بازه</label><select id="overviewChartPeriod" aria-label="بازهٔ نمودار ماهانه"><option value="3" ${chartPeriod===3?'selected':''}>۳ ماه</option><option value="6" ${chartPeriod===6?'selected':''}>۶ ماه</option><option value="12" ${chartPeriod===12?'selected':''}>۱۲ ماه</option></select></div></div><div id="overviewMonthly">${selectedChartSymbol?overviewMonthlyChart(selectedChartSymbol,chartPeriod):'<p class="overview-chart-empty">هنوز نمادی ثبت نشده است.</p>'}</div><p class="overview-chart-note">عملکرد خریدهای نماد انتخاب‌شده تا امروز؛ فروش‌ها با روش FIFO لحاظ می‌شوند. این نمودار قیمت تاریخی نیست.</p></section>
     </div>
     <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">سهم از سبد بر اساس بهای تمام‌شدۀ سهام و قدرت خرید دستی محاسبه می‌شود.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="8" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
+  const updatePriceMetrics=()=>{
+    const latest=portfolioData();
+    latest.items.forEach(item=>{
+      const row=[...el.querySelectorAll(".overview-row")].find(r=>r.dataset.symbol===item.name);
+      if(!row)return;
+      const cells=row.children,profitClass=item.profit>0?"positive":item.profit<0?"negative":"";
+      cells[1].textContent=dashboardNumber(item.totalShares);
+      cells[2].textContent=dashboardValue(item.cost);
+      cells[3].textContent=dashboardValue(item.value);
+      cells[4].textContent=dashboardSigned(item.profit);
+      cells[4].className="overview-numeric "+profitClass;
+      cells[5].textContent=dashboardSigned(item.realized);
+      cells[5].className="overview-numeric "+(item.realized>0?"positive":item.realized<0?"negative":"");
+      cells[6].textContent=dashboardSigned(item.ret,true);
+      cells[6].className="overview-numeric "+profitClass;
+    });
+    const totalCombined=latest.profit===null?null:latest.profit+latest.realized;
+    $("#overviewCurrentValue").textContent=dashboardValue(latest.current);
+    $("#totalAssetsValue").textContent=dashboardValue(latest.totalAssets);
+    $("#totalCombinedValue").innerHTML=dashboardSigned(totalCombined);
+    $("#overviewProfitableCount").textContent=dashboardNumber(latest.profitable);
+    $("#overviewLossmakingCount").textContent=dashboardNumber(latest.lossmaking);
+    $("#overviewAllocation").innerHTML=overviewAllocationChart(latest);
+    $("#overviewMonthly").innerHTML=overviewMonthlyChart($("#overviewChartSymbol")?.value,Number($("#overviewChartPeriod")?.value)||6);
+    bindOverviewTooltips(el);
+  };
+  el.querySelectorAll(".overview-price-input").forEach(input=>{
+    const row=input.closest(".overview-row"),name=row?.dataset.symbol;
+    input.oninput=()=>{
+      if(!name||!app.symbols[name])return;
+      app.symbols[name].price=num(input.value);
+      updatePriceMetrics();
+      saveApp();
+    };
+    input.onblur=()=>{
+      if(!name||!app.symbols[name])return;
+      input.value=app.symbols[name].price?formatThousands(app.symbols[name].price):"";
+      recordPriceSnapshot(name);
+      saveApp();
+    };
+    input.onkeydown=event=>{
+      if(event.key!=="Enter")return;
+      event.preventDefault();
+      const fields=[...el.querySelectorAll(".overview-price-input")],index=fields.indexOf(input),next=fields[index+1];
+      input.blur();
+      if(next){next.focus();next.select()}
+    };
+  });
   const brokerInput=$("#brokerBuyingPower");
   brokerInput.oninput=()=>{
     app.brokerBuyingPower=brokerInput.value.trim()?num(brokerInput.value):null;
