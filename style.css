@@ -546,3 +546,5 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 .sale-allocation-status{display:inline-block;margin-inline-end:5px;color:#64748b;font-size:10px;white-space:nowrap}
 
 .sale-allocation-status{display:inline-block;margin-inline-end:5px;color:#64748b;font-size:10px;white-space:nowrap}
+
+.buy-sales-editor-row>td{padding:0!important;background:#f4f8fd}.buy-sales-inline{margin:8px 10px 12px;padding:12px 14px;border:1px solid #cbdcf0;border-radius:10px;background:#fff;overflow-x:auto}.buy-sales-inline>strong{display:block;color:#245a91;margin-bottom:4px}.buy-sales-inline>p{margin:0 0 8px;font-size:11px}.buy-sales-inline-table{width:100%;min-width:500px}.buy-sales-inline-table input{width:120px;text-align:center}.buy-sales-inline-status{margin:8px 0;color:#365a7c;font-size:11px}.buy-sales-inline-actions{display:flex;gap:8px;justify-content:flex-start}.sale-allocation-status{display:inline-block;margin-inline-end:5px;color:#64748b;font-size:10px;white-space:nowrap}
