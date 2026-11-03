@@ -432,3 +432,6 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 
 /* کارت‌های خلاصۀ نماد در صفحۀ معاملات نمایش داده نمی‌شوند. */
 .cards{display:none!important}
+
+/* نمودار ماهانه از صفحۀ معاملات نماد حذف شده است. */
+.chart-panel{display:none!important}
