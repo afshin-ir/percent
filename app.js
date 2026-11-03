@@ -26,10 +26,10 @@ function setDataFieldTabOrder(){
 }
 
 function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr:not(.sale-tr)")].map(tr=>({id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value)}));sortRows()}
-function estimatedSaleNet(symbol, shares, closing){const gross=Number(shares)*Number(closing);const rate=Math.max(0,Number(symbol.fee)||0);return gross*(1-rate/100)}
-function updateTableOnly(){const s=active(),price=s.price;let ts=0,tc=0;rowsEl.querySelectorAll("tr:not(.sale-tr)").forEach(tr=>{const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c;tr.querySelector(".cost").textContent=fmt(cost);tr.querySelector(".gain-amount").textContent="—";const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);const profit=cost&&price?(estimatedSaleNet(s,sh,price)-cost)/cost:null;const pe=tr.querySelector(".profit");pe.textContent=profit===null?"—":fmtPct(profit);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);ts+=sh;tc+=cost});$("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&price?(estimatedSaleNet(s,ts,price)/tc)-1:null;const tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=s.rows.length?"none":"block";drawChart()}
+
+function updateTableOnly(){const s=active(),price=s.price;let ts=0,tc=0;rowsEl.querySelectorAll("tr:not(.sale-tr)").forEach(tr=>{const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c;tr.querySelector(".cost").textContent=fmt(cost);tr.querySelector(".gain-amount").textContent="—";const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);const profit=cost&&price?(sh*price-cost)/cost:null;const pe=tr.querySelector(".profit");pe.textContent=profit===null?"—":fmtPct(profit);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);ts+=sh;tc+=cost});$("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&price?(ts*price/tc)-1:null;const tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=s.rows.length?"none":"block";drawChart()}
 function render(){sortRows();updatePurchasesTitle();const s=active();$("#activeSymbolTitle").textContent=activeSymbol;priceEl.value=s.price?formatThousands(s.price):"";rowsEl.innerHTML="";s.rows.forEach(r=>addRow(r));$("#tableEmpty").style.display=s.rows.length?"none":"block";updateTableOnly();$("#lastUpdated").textContent=`امروز: ${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;drawChart();setDataFieldTabOrder()}
-priceEl.oninput=()=>{active().price=num(priceEl.value);updateTableOnly();saveApp()};priceEl.onblur=()=>{priceEl.value=formatThousands(priceEl.value);active().price=num(priceEl.value);recordPriceSnapshot();render();saveApp()};$("#sellFee").oninput=()=>{active().fee=Math.max(0,num($("#sellFee").value));updateTableOnly();saveApp()};$("#sellFee").onblur=()=>{$("#sellFee").value=formatDecimal(active().fee??0);render();saveApp()};$("#addBtn").onclick=()=>{active().rows.unshift({id:id(),date:"",shares:0,price:0,commission:0});render();saveApp();setTimeout(()=>rowsEl.querySelector(".date-input")?.click(),0)};$("#emptyAddBtn").onclick=()=>$("#addBtn").click();
+priceEl.oninput=()=>{active().price=num(priceEl.value);updateTableOnly();saveApp()};priceEl.onblur=()=>{priceEl.value=formatThousands(priceEl.value);active().price=num(priceEl.value);recordPriceSnapshot();render();saveApp()};$("#addBtn").onclick=()=>{active().rows.unshift({id:id(),date:"",shares:0,price:0,commission:0});render();saveApp();setTimeout(()=>rowsEl.querySelector(".date-input")?.click(),0)};$("#emptyAddBtn").onclick=()=>$("#addBtn").click();
 function addNewSymbol(){const name=prompt("نام نماد را وارد کنید:");if(!name)return;const n=name.trim();if(!n||app.symbols[n])return alert("این نماد قبلاً وجود دارد.");app.symbols[n]=makeSymbol([],0,.12);app.symbolOrder.push(n);activeSymbol=n;overviewMode=false;app.ui=app.ui||{};app.ui.overview=false;renderSymbols();render();saveApp()}$("#renameSymbolBtn").onclick=()=>{const old=activeSymbol,n=prompt("نام جدید نماد را وارد کنید:",old)?.trim();if(!n||n===old)return;if(app.symbols[n])return alert("این نام قبلاً وجود دارد.");app.symbols[n]=app.symbols[old];delete app.symbols[old];const i=app.symbolOrder.indexOf(old);if(i>=0)app.symbolOrder[i]=n;if(app.ui?.chartSymbol===old)app.ui.chartSymbol=n;activeSymbol=n;renderSymbols();render();saveApp()};function deleteSymbolByName(name){
   const symbol=app.symbols[name];if(!symbol)return;
   if(Object.keys(app.symbols).length===1){alert("حداقل یک نماد باید باقی بماند.");return;}
@@ -116,7 +116,7 @@ function monthlyChartData(symbolName=activeSymbol,requestedPeriod=null){
   }
  }
  const closing=Number(symbol.price);
- for(const lot of lots){if(lot.remaining>0){lot.group.remaining+=lot.remaining;lot.group.unrealized+=closing>0?estimatedSaleNet(symbol,lot.remaining,closing)-lot.remaining*lot.unitCost:0;}}
+ for(const lot of lots){if(lot.remaining>0){lot.group.remaining+=lot.remaining;lot.group.unrealized+=closing>0?lot.remaining*closing-lot.remaining*lot.unitCost:0;}}
  return [...groups.values()].filter(g=>currentMonth-g.monthIndex>=0&&currentMonth-g.monthIndex<period)
   .filter(g=>closing>0||g.remaining===0).map(g=>({...g,amount:g.realized+g.unrealized,profit:g.basis?(g.realized+g.unrealized)/g.basis:0,provisional:g.remaining>0,month:g.month+(g.monthIndex===currentMonth?' (ماه جاری)':'')}))
   .sort((a,b)=>a.monthIndex-b.monthIndex);
@@ -195,7 +195,7 @@ function portfolioData(){
     const cost=ledger.cost;
     const hasPrice=Number(s.price)>0;
     const value=hasPrice ? totalShares*Number(s.price) : null;
-    const profit=value===null?null:estimatedSaleNet(s,totalShares,s.price)-cost;
+    const profit=value===null?null:totalShares*s.price-cost;
     const ret=profit!==null&&cost?profit/cost:null;
     shares+=totalShares; purchases+=rows.length; investment+=cost; if(value!==null) current+=value;
     items.push({name,totalShares,purchases,cost,value,profit,ret,realized:ledger.realized,price:Number(s.price)||0});
@@ -499,7 +499,7 @@ function renderSymbolView(){
   $("#activeSymbolTitle").textContent=activeSymbol;
   priceEl.value=s.price?formatThousands(s.price):"";
   
-  $("#sellFee").value=formatDecimal(s.fee??0);
+  
   
   rowsEl.innerHTML="";
   s.rows.forEach(r=>addRow(r));
