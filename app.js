@@ -286,9 +286,10 @@ function costLedger(symbol){
   }
   byTrade[e.kind+':'+e.id]={shares,average:shares?cost/shares:0};
  }
+ const average={shares,cost,realized};
  const matched=allocationLedger(symbol);
- if(matched.complete&&valid){let matchedShares=0,matchedCost=0,matchedRealized=0;for(const [buyId,state] of Object.entries(matched.byBuy)){const qty=matched.remainingByBuy.get(buyId)||0;matchedShares+=qty;matchedCost+=qty*state.unitCost}Object.values(matched.bySale).forEach(sale=>matchedRealized+=sale.gain);return{shares:matchedShares,cost:matchedCost,realized:matchedRealized,bySale:{...bySale,...matched.bySale},byTrade,valid}}
- return {shares,cost,realized,bySale,byTrade,valid};
+ if(matched.complete&&valid){let matchedShares=0,matchedCost=0,matchedRealized=0;for(const [buyId,state] of Object.entries(matched.byBuy)){const qty=matched.remainingByBuy.get(buyId)||0;matchedShares+=qty;matchedCost+=qty*state.unitCost}Object.values(matched.bySale).forEach(sale=>matchedRealized+=sale.gain);return{shares:matchedShares,cost:matchedCost,realized:matchedRealized,averageShares:average.shares,averageCost:average.cost,averageRealized:average.realized,bySale:{...bySale,...matched.bySale},byTrade,valid}}
+ return {shares,cost,realized,averageShares:average.shares,averageCost:average.cost,averageRealized:average.realized,bySale,byTrade,valid};
 }
 function saleIsComplete(sale){return !!parseJ(sale.date)&&Number.isInteger(Number(sale.shares))&&Number(sale.shares)>0&&Number(sale.price)>0&&sale.commission!==null&&sale.commission!==undefined&&String(sale.commission).trim()!==''&&Number.isFinite(Number(sale.commission))&&Number(sale.commission)>=0}
 function allocationLedger(symbol){
@@ -319,6 +320,12 @@ function allocationLedger(symbol){
  return {byBuy,bySale,remainingByBuy:remaining,complete:!blockedSale&&allSalesAllocated,blockedSale};
 }
 
+function estimatedSellFeeRate(symbol){
+  const sales=(symbol.sales||[]).filter(saleIsComplete);
+  const gross=sales.reduce((sum,sale)=>sum+Number(sale.shares)*Number(sale.price),0);
+  const fees=sales.reduce((sum,sale)=>sum+Number(sale.commission),0);
+  return gross>0?fees/gross:Math.max(0,Number(symbol.fee??.12))/100;
+}
 function portfolioData(){
   const items=[];
   let shares=0, purchases=0, investment=0, totalBuyCost=0, current=0;
@@ -330,11 +337,14 @@ function portfolioData(){
     const cost=ledger.cost;
     const hasPrice=Number(s.price)>0;
     const value=hasPrice ? totalShares*Number(s.price) : null;
-    const openProfit=value===null?null:value-cost;
+    const estimatedSellFee=value===null?null:value*estimatedSellFeeRate(s);
+    const currentProfit=value===null?null:value-(estimatedSellFee||0)-ledger.averageCost;
+    const currentRet=ledger.averageCost>0&&currentProfit!==null?currentProfit/ledger.averageCost:null;
+    const openProfit=value===null?null:value-cost-(estimatedSellFee||0);
     const profit=openProfit===null?(totalShares===0?ledger.realized:null):openProfit+ledger.realized;
     const ret=profit!==null&&grossCost?profit/grossCost:null;
     shares+=totalShares; purchases+=rows.length; investment+=cost; totalBuyCost+=grossCost; if(value!==null) current+=value;
-    items.push({name,totalShares,purchases,cost,grossCost,value,profit,ret,realized:ledger.realized,price:Number(s.price)||0});
+    items.push({name,totalShares,purchases,cost,grossCost,value,currentProfit,currentRet,estimatedSellFee,profit,ret,realized:ledger.realized,price:Number(s.price)||0});
   });
   const buyingPower=app.brokerBuyingPower;
   const portfolioBasis=investment+(buyingPower??0);
@@ -376,7 +386,8 @@ const overviewSortColumns=[
   {key:"totalShares",label:"تعداد",tip:"تعداد سهام باقی‌مانده پس از کسر فروش‌ها"},
   {key:"cost",label:"بهای خرید",tip:"بهای تمام‌شدۀ سهام باقی‌مانده، با احتساب کارمزد خرید"},
   {key:"value",label:"ارزش فعلی",tip:"تعداد سهام باقی‌مانده ضرب‌در قیمت پایانی ثبت‌شده"},
-  {key:"profit",label:"سود و زیان کل",tip:"سود و زیان فروش‌های انجام‌شده با کارمزد واقعی، به‌علاوۀ تغییر ارزش سهم‌های باقی‌مانده بر اساس قیمت پایانی. درصد نسبت به کل مبلغ خریدهاست."}
+  {key:"currentProfit",label:"سود و زیان فعلی",tip:"سود و زیان سهام باقی‌مانده بر مبنای میانگین بهای خرید، پس از کسر کارمزد فروش برآوردی؛ برای مقایسه با سود و زیان فعلی کارگزاری."},
+  {key:"profit",label:"سود و زیان کل",tip:"سود و زیان فروش‌های انجام‌شده با کارمزد واقعی، به‌علاوۀ سود و زیان سهام باقی‌مانده پس از کسر کارمزد فروش برآوردی."}
 ];
 function overviewCompare(a,b,key){
   const x=a[key],y=b[key];
@@ -471,7 +482,7 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
   }).join("");
   const rows=orderedItems.map(x=>{
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-price-cell"><input class="overview-price-input" type="text" inputmode="numeric" autocomplete="off" value="${x.price?formatThousands(x.price):""}" aria-label="قیمت پایانی ${escapeHtml(x.name)}" placeholder="قیمت را وارد کنید"></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${overviewPerformanceMarkup(x.profit,x.ret)}</td></tr>`;
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-price-cell"><input class="overview-price-input" type="text" inputmode="numeric" autocomplete="off" value="${x.price?formatThousands(x.price):""}" aria-label="قیمت پایانی ${escapeHtml(x.name)}" placeholder="قیمت را وارد کنید"></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${x.currentProfit>0?"positive":x.currentProfit<0?"negative":""}">${overviewPerformanceMarkup(x.currentProfit,x.currentRet)}</td><td class="overview-numeric ${profitClass}">${overviewPerformanceMarkup(x.profit,x.ret)}</td></tr>`;
   }).join("");
   const totalCombined=d.profit;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
@@ -493,7 +504,7 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>ترکیب دارایی‌ها</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><p>سهم هر نماد از ارزش روز دارایی‌ها، به‌همراه قدرت خرید</p></div><div id="overviewAllocation">${overviewAllocationChart(d)}</div></section>
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>سود و زیان خریدهای ماهانه</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><div class="overview-chart-controls"><label for="overviewChartSymbol">نماد</label><select id="overviewChartSymbol" aria-label="نماد نمودار ماهانه">${monthlyOptions}</select><label for="overviewChartPeriod">بازه</label><select id="overviewChartPeriod" aria-label="بازهٔ نمودار ماهانه"><option value="3" ${chartPeriod===3?'selected':''}>۳ ماه</option><option value="6" ${chartPeriod===6?'selected':''}>۶ ماه</option><option value="12" ${chartPeriod===12?'selected':''}>۱۲ ماه</option></select></div></div><div id="overviewMonthly">${selectedChartSymbol?overviewMonthlyChart(selectedChartSymbol,chartPeriod):'<p class="overview-chart-empty">هنوز نمادی ثبت نشده است.</p>'}</div><p class="overview-chart-note">عملکرد خریدهای نماد انتخاب‌شده تا امروز؛ فروش‌ها با روش FIFO لحاظ می‌شوند. این نمودار قیمت تاریخی نیست.</p></section>
     </div>
-    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">«بهای خرید» هزینهٔ سهم‌هایی است که هنوز دارید. «سود و زیان کل» سود و زیان فروش‌های انجام‌شده را با تغییر ارزش سهم‌های باقی‌مانده بر اساس قیمت پایانی جمع می‌کند؛ درصدش نسبت به مجموع مبلغ خریدهاست.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="6" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">«سود و زیان فعلی» فقط سهم‌های باقی‌مانده را با مبنای میانگین بهای خرید می‌سنجد و کارمزد فروش را از نرخ فروش‌های ثبت‌شدهٔ همان نماد برآورد می‌کند؛ این عدد برای مقایسه با کارگزاری است. «سود و زیان کل» علاوه بر آن، نتیجهٔ فروش‌های انجام‌شده را هم دربر می‌گیرد و بر مبنای خریدهای ثبت‌شده محاسبه می‌شود.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="7" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
   const updatePriceMetrics=()=>{
     const latest=portfolioData();
     latest.items.forEach(item=>{
@@ -503,8 +514,11 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
       cells[2].textContent=dashboardNumber(item.totalShares);
       cells[3].textContent=dashboardValue(item.cost);
       cells[4].textContent=dashboardValue(item.value);
-      cells[5].innerHTML=overviewPerformanceMarkup(item.profit,item.ret);
-      cells[5].className="overview-numeric "+profitClass;
+      const currentClass=item.currentProfit>0?"positive":item.currentProfit<0?"negative":"";
+      cells[5].innerHTML=overviewPerformanceMarkup(item.currentProfit,item.currentRet);
+      cells[5].className="overview-numeric "+currentClass;
+      cells[6].innerHTML=overviewPerformanceMarkup(item.profit,item.ret);
+      cells[6].className="overview-numeric "+profitClass;
     });
     const totalCombined=latest.profit;
     $("#overviewCurrentValue").textContent=dashboardValue(latest.current);
