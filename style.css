@@ -519,16 +519,22 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 
 
 
-/* قیمت پایانی در سربرگ نماد و کنار عنوان آن قرار می‌گیرد. */
-.hero-row{align-items:center;gap:18px}
-.hero-symbol{min-width:0}
-.closing-price-control{width:min(100%,280px);flex:0 1 280px;display:flex;flex-direction:column;gap:6px}
+/* قیمت پایانی در سربرگ بخش معاملات قرار می‌گیرد. */
+.trades-panel-head{align-items:center;gap:18px}
+.trades-heading-group{display:flex;align-items:center;gap:20px;flex:1 1 auto;min-width:0}
+.trades-heading-title{min-width:0}
+.closing-price-control{width:250px;flex:0 0 250px;display:flex;flex-direction:column;gap:6px}
 .closing-price-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .closing-price-meta label{font-size:12px;color:#5c636b;white-space:nowrap}
 .closing-price-control input{width:100%;min-height:40px;font-size:15px}
 .closing-price-meta #lastUpdated{padding:3px 8px;border-radius:999px;background:#f2f6fb;color:#718096;font-size:10px;line-height:1.5;white-space:nowrap}
+@media(max-width:1000px){
+  .trades-panel-head{align-items:flex-start;flex-wrap:wrap}
+  .trades-heading-group{flex:1 1 100%;justify-content:space-between}
+  .trades-panel-head .trade-actions{width:100%}
+}
 @media(max-width:700px){
-  .hero-row{align-items:stretch;gap:12px}
-  .hero-symbol{width:100%}
+  .trades-panel-head{align-items:stretch}
+  .trades-heading-group{flex-direction:column;align-items:stretch;gap:8px}
   .closing-price-control{width:100%;max-width:380px;flex:0 1 auto}
 }
