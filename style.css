@@ -441,3 +441,32 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 
 /* خلاصۀ شاخص‌ها و نمودارهای نمای کلی حذف شده‌اند. */
 .overview-top,.overview-chart-panel{display:none!important}
+
+
+/* فهرست نمادها در صفحۀ معاملات، نواری و قابل پیمایش می‌ماند. */
+#symbolList.sidebar{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:8px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:10px 12px;
+  margin:0 0 14px;
+  position:static;
+  top:auto;
+  height:auto;
+  z-index:auto;
+  scrollbar-width:thin;
+}
+#symbolList .sidebar-head{
+  flex:0 0 auto;
+  border:0;
+  padding:4px 8px;
+}
+#symbolList .symbol-btn{
+  flex:0 0 auto;
+  width:auto;
+  min-width:120px;
+}
+#symbolList .sidebar-note{display:none}
