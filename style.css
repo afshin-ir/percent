@@ -515,3 +515,8 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 @media(max-width:520px){
   .settings-grid{grid-template-columns:1fr}
 }
+
+
+/* تنظیمات نماد اکنون فقط یک فیلد دارد. */
+.settings{width:min(100%,380px)}
+.settings-grid{grid-template-columns:1fr}
