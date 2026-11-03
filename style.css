@@ -429,3 +429,6 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 .overview-performance{display:inline-flex;align-items:baseline;gap:12px;direction:ltr;white-space:nowrap}
 .overview-performance-percent{font-size:.88em;opacity:.86}
 
+
+/* کارت‌های خلاصۀ نماد در صفحۀ معاملات نمایش داده نمی‌شوند. */
+.cards{display:none!important}
