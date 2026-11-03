@@ -470,3 +470,10 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
   min-width:120px;
 }
 #symbolList .sidebar-note{display:none}
+
+
+/* راهنمای خالی‌بودن جدول معاملات و اقدام آغازین */
+.table-empty-copy{display:grid;gap:4px;max-width:520px;margin:0 auto}
+.table-empty-copy strong{color:var(--ink);font-size:14px;font-weight:700}
+.table-empty-copy span{color:var(--muted);font-size:12px;line-height:1.9}
+.table-empty .primary{margin-top:12px;min-width:180px;min-height:44px}
