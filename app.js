@@ -290,30 +290,30 @@ function allocationLedger(symbol){
 
 function portfolioData(){
   const items=[];
-  let shares=0, purchases=0, investment=0, current=0;
+  let shares=0, purchases=0, investment=0, totalBuyCost=0, current=0;
   Object.entries(app.symbols).forEach(([name,s])=>{
     const rows=Array.isArray(s.rows)?s.rows:[];
     const totalShares=rows.reduce((n,r)=>n+(Number(r.shares)||0),0)-(s.sales||[]).reduce((n,r)=>n+(Number(r.shares)||0),0);
     const grossCost=rows.reduce((n,r)=>n+(Number(r.shares)||0)*(Number(r.price)||0)+(Number(r.commission)||0),0);
-    const boughtShares=rows.reduce((n,r)=>n+(Number(r.shares)||0),0);
     const ledger=costLedger(s);
     const cost=ledger.cost;
     const hasPrice=Number(s.price)>0;
     const value=hasPrice ? totalShares*Number(s.price) : null;
-    const profit=value===null?null:totalShares*s.price-cost;
-    const ret=profit!==null&&cost?profit/cost:null;
-    shares+=totalShares; purchases+=rows.length; investment+=cost; if(value!==null) current+=value;
-    items.push({name,totalShares,purchases,cost,value,profit,ret,realized:ledger.realized,price:Number(s.price)||0});
+    const openProfit=value===null?null:value-cost;
+    const profit=openProfit===null?(totalShares===0?ledger.realized:null):openProfit+ledger.realized;
+    const ret=profit!==null&&grossCost?profit/grossCost:null;
+    shares+=totalShares; purchases+=rows.length; investment+=cost; totalBuyCost+=grossCost; if(value!==null) current+=value;
+    items.push({name,totalShares,purchases,cost,grossCost,value,profit,ret,realized:ledger.realized,price:Number(s.price)||0});
   });
   const buyingPower=app.brokerBuyingPower;
   const portfolioBasis=investment+(buyingPower??0);
   items.forEach(x=>x.share=portfolioBasis>0?x.cost/portfolioBasis:null);
-  const priced=items.filter(x=>x.value!==null);
-  const totalProfit=priced.length?items.reduce((sum,x)=>sum+(x.profit??0),0):null;
-  const totalRet=totalProfit!==null&&investment?totalProfit/investment:null;
+  const complete=items.every(x=>x.profit!==null);
+  const totalProfit=complete?items.reduce((sum,x)=>sum+x.profit,0):null;
+  const totalRet=totalProfit!==null&&totalBuyCost?totalProfit/totalBuyCost:null;
   const totalAssets=buyingPower!==null&&items.every(x=>x.value!==null||x.totalShares===0)?current+buyingPower:null;
   const realized=items.reduce((sum,x)=>sum+x.realized,0);
-  return {items,shares,purchases,investment,realized,current:priced.length?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,buyingPower,totalAssets};
+  return {items,shares,purchases,investment,totalBuyCost,realized,current:complete?current:null,profit:totalProfit,ret:totalRet,profitable:items.filter(x=>x.profit!==null&&x.profit>0).length,lossmaking:items.filter(x=>x.profit!==null&&x.profit<0).length,buyingPower,totalAssets};
 }
 function dashboardValue(v, suffix=""){
   return v===null?"—":dashboardNumber(v)+(suffix?` ${suffix}`:"");
@@ -345,7 +345,7 @@ const overviewSortColumns=[
   {key:"totalShares",label:"تعداد",tip:"تعداد سهام باقی‌مانده پس از کسر فروش‌ها"},
   {key:"cost",label:"بهای خرید",tip:"بهای تمام‌شدۀ سهام باقی‌مانده، با احتساب کارمزد خرید"},
   {key:"value",label:"ارزش فعلی",tip:"تعداد سهام باقی‌مانده ضرب‌در قیمت پایانی ثبت‌شده"},
-  {key:"profit",label:"سود/زیان",tip:"سود یا زیان سهامی که هنوز فروخته نشده‌اند، با کسر کارمزد فروش احتمالی"}
+  {key:"profit",label:"سود/زیان کل",tip:"سود/زیان فروش‌های انجام‌شده به‌علاوۀ سهام باقی‌مانده؛ درصد نسبت به کل مبلغ خریدها محاسبه می‌شود."}
 ];
 function overviewCompare(a,b,key){
   const x=a[key],y=b[key];
@@ -442,7 +442,7 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
     const profitClass=x.profit>0?"positive":x.profit<0?"negative":"";
     return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-price-cell"><input class="overview-price-input" type="text" inputmode="numeric" autocomplete="off" value="${x.price?formatThousands(x.price):""}" aria-label="قیمت پایانی ${escapeHtml(x.name)}" placeholder="قیمت را وارد کنید"></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${profitClass}">${overviewPerformanceMarkup(x.profit,x.ret)}</td></tr>`;
   }).join("");
-  const totalCombined=d.profit===null?null:d.profit+d.realized;
+  const totalCombined=d.profit;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
   const selectedChartSymbol=app.ui?.overviewChartSymbol&&app.symbols[app.ui.overviewChartSymbol]?app.ui.overviewChartSymbol:(orderedItems[0]?.name||'');
   const chartPeriod=[3,6,12].includes(Number(app.ui?.overviewChartPeriod))?Number(app.ui.overviewChartPeriod):6;
@@ -462,7 +462,7 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>ترکیب دارایی‌ها</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><p>سهم هر نماد از ارزش روز دارایی‌ها، به‌همراه قدرت خرید</p></div><div id="overviewAllocation">${overviewAllocationChart(d)}</div></section>
       <section class="panel overview-chart-panel"><div class="overview-chart-head"><h2>سود و زیان خریدهای ماهانه</h2><button class="chart-expand" type="button" title="بزرگ‌نمایی نمودار" aria-label="بزرگ‌نمایی نمودار">⛶</button><div class="overview-chart-controls"><label for="overviewChartSymbol">نماد</label><select id="overviewChartSymbol" aria-label="نماد نمودار ماهانه">${monthlyOptions}</select><label for="overviewChartPeriod">بازه</label><select id="overviewChartPeriod" aria-label="بازهٔ نمودار ماهانه"><option value="3" ${chartPeriod===3?'selected':''}>۳ ماه</option><option value="6" ${chartPeriod===6?'selected':''}>۶ ماه</option><option value="12" ${chartPeriod===12?'selected':''}>۱۲ ماه</option></select></div></div><div id="overviewMonthly">${selectedChartSymbol?overviewMonthlyChart(selectedChartSymbol,chartPeriod):'<p class="overview-chart-empty">هنوز نمادی ثبت نشده است.</p>'}</div><p class="overview-chart-note">عملکرد خریدهای نماد انتخاب‌شده تا امروز؛ فروش‌ها با روش FIFO لحاظ می‌شوند. این نمودار قیمت تاریخی نیست.</p></section>
     </div>
-    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">قیمت پایانی را در جدول وارد کنید؛ برای دیدن معاملات، روی نام نماد بزنید.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="6" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
+    <section class="panel overview-panel"><div class="panel-head"><div class="overview-title-actions"><h2>نمادها</h2><button id="addSymbolBtn" type="button" class="icon-btn overview-add-symbol" title="نماد جدید" aria-label="نماد جدید">＋</button></div><p class="muted">قیمت پایانی را وارد کنید؛ سود/زیان کل، فروش‌های انجام‌شده و سهم‌های باقی‌مانده را با هم حساب می‌کند.</p></div><div class="column-options"><button type="button" id="columnOptionsToggle" class="small-btn" aria-expanded="false">☷ انتخاب ستون‌ها</button><div id="columnOptionsPanel" class="column-options-panel" hidden></div></div><div class="table-wrap"><table class="overview-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows||`<tr><td colspan="6" class="overview-empty"><span>هنوز نمادی ثبت نشده است.</span><br><button id="emptyAddSymbolBtn" class="primary" type="button">＋ افزودن نخستین نماد</button></td></tr>`}</tbody></table></div></section>`;
   const updatePriceMetrics=()=>{
     const latest=portfolioData();
     latest.items.forEach(item=>{
@@ -475,7 +475,7 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
       cells[5].innerHTML=overviewPerformanceMarkup(item.profit,item.ret);
       cells[5].className="overview-numeric "+profitClass;
     });
-    const totalCombined=latest.profit===null?null:latest.profit+latest.realized;
+    const totalCombined=latest.profit;
     $("#overviewCurrentValue").textContent=dashboardValue(latest.current);
     $("#totalAssetsValue").textContent=dashboardValue(latest.totalAssets);
     $("#totalCombinedValue").innerHTML=dashboardSigned(totalCombined);
