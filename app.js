@@ -58,7 +58,7 @@ function togglePurchaseEdit(tr){
   const linked=(active().sales||[]).filter(s=>(s.allocations||[]).some(a=>a.buyId===buyId&&Number(a.shares)>0));
   const assigned=linked.reduce((n,s)=>n+(s.allocations||[]).filter(a=>a.buyId===buyId).reduce((sum,a)=>sum+(Number(a.shares)||0),0),0);
   if(shares<assigned){alert('تعداد خرید نمی‌تواند از تعداد سهم‌های فروخته‌شده کمتر باشد. ابتدا تعداد فروش‌ها را اصلاح کن.');return}
-  if(linked.some(s=>!parseJ(s.date)||date&&faToEn(s.date)<date)){alert('تاریخ خرید نمی‌تواند بعد از تاریخ فروش‌های ثبت‌شده باشد. ابتدا تاریخ فروش را اصلاح کن.');return}
+  if(linked.length&&(!parseJ(date)||linked.some(s=>!parseJ(s.date)||faToEn(s.date)<date))){alert('تاریخ خرید نمی‌تواند خالی یا بعد از تاریخ فروش‌های ثبت‌شده باشد. ابتدا تاریخ خرید یا فروش را اصلاح کن.');return}
   delete tr.dataset.purchaseEditMode;
  }else tr.dataset.purchaseEditMode='true';
  updateTableOnly();setDataFieldTabOrder();saveApp();
