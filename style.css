@@ -435,3 +435,6 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 
 /* نمودار ماهانه از صفحۀ معاملات نماد حذف شده است. */
 .chart-panel{display:none!important}
+
+/* فهرست نمادها همراه صفحه حرکت می‌کند تا روی بخش‌های اصلی نیفتد. */
+#symbolList.sidebar{position:static;top:auto;height:auto;z-index:auto;margin:0 0 14px}
