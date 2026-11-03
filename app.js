@@ -208,7 +208,7 @@ function allocationLedger(symbol){
  const byBuy={},bySale={},remaining=new Map();
  const events=[...(symbol.rows||[]).map((r,i)=>({...r,kind:'buy',seq:i})),...(symbol.sales||[]).map((r,i)=>({...r,kind:'sell',seq:i}))]
   .sort((a,b)=>faToEn(a.date||'').localeCompare(faToEn(b.date||''))||(a.kind===b.kind?a.seq-b.seq:a.kind==='buy'?-1:1));
- let blockedSale=null;
+ let blockedSale=null,allSalesAllocated=true;
  for(const e of events){
   const q=Number(e.shares),p=Number(e.price),fee=Number(e.commission)||0;
   if(e.kind==='buy'){
@@ -217,10 +217,10 @@ function allocationLedger(symbol){
    continue;
   }
   if(!q)continue;
-  if(!saleIsComplete(e)){blockedSale=e;break}
   const allocs=Array.isArray(e.allocations)?e.allocations:[];
   const total=allocs.reduce((n,a)=>n+(Number(a.shares)||0),0);
-  if(total!==q||allocs.some(a=>!Number.isInteger(Number(a.shares))||Number(a.shares)<=0)){blockedSale=e;break}
+  if(total===0){allSalesAllocated=false;continue}
+  if(!saleIsComplete(e)||total!==q||allocs.some(a=>!Number.isInteger(Number(a.shares))||Number(a.shares)<=0)){blockedSale=e;break}
   let basis=0,valid=true;
   for(const a of allocs){const lot=byBuy[a.buyId],available=remaining.get(a.buyId)||0,qty=Number(a.shares);if(!lot||available<qty){valid=false;break}basis+=qty*lot.unitCost}
   if(!valid){blockedSale=e;break}
@@ -228,7 +228,7 @@ function allocationLedger(symbol){
   for(const a of allocs){const lot=byBuy[a.buyId],qty=Number(a.shares),net=qty*p-fee*qty/q,gain=net-qty*lot.unitCost;saleNet+=net;lot.soldShares+=qty;lot.realizedGain+=gain;lot.realizedBasis+=qty*lot.unitCost;remaining.set(a.buyId,(remaining.get(a.buyId)||0)-qty)}
   const gain=saleNet-basis;bySale[e.id]={basis,net:saleNet,gain,pct:basis?gain/basis:null,allocated:q};
  }
- return {byBuy,bySale,remainingByBuy:remaining,complete:!blockedSale,blockedSale};
+ return {byBuy,bySale,remainingByBuy:remaining,complete:!blockedSale&&allSalesAllocated,blockedSale};
 }
 
 function portfolioData(){
@@ -665,9 +665,9 @@ function allocationCapacitiesBefore(symbol,target){
   if(e.kind==='sell'&&e.id===target.id)break;
   if(e.kind==='buy'){const q=Number(e.shares);if(parseJ(e.date)&&Number.isInteger(q)&&q>0&&Number(e.price)>0)remaining.set(e.id,q);continue}
   const q=Number(e.shares);if(!q)continue;
-  if(!saleIsComplete(e))return{remaining,blocked:e};
   const allocs=Array.isArray(e.allocations)?e.allocations:[],sum=allocs.reduce((n,a)=>n+(Number(a.shares)||0),0);
-  if(sum!==q||allocs.some(a=>!Number.isInteger(Number(a.shares))||Number(a.shares)<=0))return{remaining,blocked:e};
+  if(sum===0)continue;
+  if(!saleIsComplete(e)||sum!==q||allocs.some(a=>!Number.isInteger(Number(a.shares))||Number(a.shares)<=0))return{remaining,blocked:e};
   for(const a of allocs){const used=Number(a.shares),left=remaining.get(a.buyId)||0;if(left<used)return{remaining,blocked:e};remaining.set(a.buyId,left-used)}
  }
  const targetIndex=events.findIndex(e=>e.kind==='sell'&&e.id===target.id);
@@ -688,7 +688,7 @@ function openSaleAllocation(saleId){
  if(!saleIsComplete(sale))status.textContent='برای تخصیص، تاریخ، تعداد، قیمت و کارمزد فروش را کامل کن.';
  else{
   const plan=allocationCapacitiesBefore(symbol,sale);
-  if(plan.blocked)status.textContent='ابتدا فروش قدیمی‌تر '+(plan.blocked.date?enToFa(plan.blocked.date):'بدون تاریخ')+' را کامل و به پله‌های خرید تخصیص بده.';
+  if(plan.blocked)status.textContent='تخصیص ثبت‌شدۀ یک فروش قبلی با موجودی خریدها سازگار نیست؛ آن را بررسی کن.';
   else{
    const already=new Map((sale.allocations||[]).map(a=>[a.buyId,Number(a.shares)||0]));
    const eligible=(symbol.rows||[]).filter(b=>parseJ(b.date)&&faToEn(b.date)<=faToEn(sale.date)&&Number(b.shares)>0&&Number(b.price)>0).sort((a,b)=>faToEn(b.date).localeCompare(faToEn(a.date)));
