@@ -517,6 +517,18 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 }
 
 
-/* تنظیمات نماد اکنون فقط یک فیلد دارد. */
-.settings{width:min(100%,380px)}
-.settings-grid{grid-template-columns:1fr}
+
+
+/* قیمت پایانی در سربرگ نماد و کنار عنوان آن قرار می‌گیرد. */
+.hero-row{align-items:center;gap:18px}
+.hero-symbol{min-width:0}
+.closing-price-control{width:min(100%,280px);flex:0 1 280px;display:flex;flex-direction:column;gap:6px}
+.closing-price-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.closing-price-meta label{font-size:12px;color:#5c636b;white-space:nowrap}
+.closing-price-control input{width:100%;min-height:40px;font-size:15px}
+.closing-price-meta #lastUpdated{padding:3px 8px;border-radius:999px;background:#f2f6fb;color:#718096;font-size:10px;line-height:1.5;white-space:nowrap}
+@media(max-width:700px){
+  .hero-row{align-items:stretch;gap:12px}
+  .hero-symbol{width:100%}
+  .closing-price-control{width:100%;max-width:380px;flex:0 1 auto}
+}
