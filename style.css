@@ -553,3 +553,5 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 body{padding-top:0!important}
 body>header,body>header:hover,body>header:focus-within{position:static!important;inset:auto!important;inset-block-start:auto!important;inset-inline:auto!important;top:auto!important;width:100%;margin:0!important;transform:none!important}
 .trade-guide-note.profit-guide{color:#5f6f80;margin-top:2px}
+
+.sell-commission-cell{min-width:160px}
