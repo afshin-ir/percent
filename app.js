@@ -14,7 +14,7 @@ function loadApp(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(
 function renderSymbols(){const el=$("#symbolList");el.innerHTML="";(app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{const s=app.symbols[name];if(!s)return;const b=document.createElement("button");b.className="symbol-btn"+(name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;const pd=portfolioData(), item=pd.items.find(x=>x.name===name);
     b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span><span class="symbol-share">${item?.share===null||item?.share===undefined?"—":dashboardPct(item.share)}</span>`;b.onclick=()=>switchSymbol(name);b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbols();saveApp()};el.appendChild(b)})}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function switchSymbol(name){activeSymbol=name;sortRows();updatePurchasesTitle();renderSymbols();render();saveApp()}
 function addRow(data={date:"",shares:"",price:"",commission:""}){const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||id();tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?formatThousands(data.shares):"";tr.querySelector(".price").value=data.price?formatThousands(data.price):"";tr.querySelector(".commission").value=data.commission?formatThousands(data.commission):"";const sellFeeInput=tr.querySelector(".sell-commission");sellFeeInput.value=data.sellCommission==null?"":formatThousands(data.sellCommission);rowsEl.appendChild(tr);tr.querySelector(".date-input").onclick=()=>openCalendar(tr);tr.querySelector(".date-input").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(tr)}};[".shares",".price",".commission"].forEach(sel=>{const input=tr.querySelector(sel);input.oninput=()=>{syncRows();updateTableOnly()};input.onblur=()=>{input.value=formatThousands(input.value);syncRows();updateTableOnly();saveApp()}});sellFeeInput.oninput=()=>{syncSellCommissionRow(tr,false);updateTableOnly()};sellFeeInput.onblur=()=>{sellFeeInput.value=formatThousands(sellFeeInput.value);syncSellCommissionRow(tr,true);updateTableOnly()};tr.querySelector(".delete").onclick=()=>{const date=tr.querySelector(".jalali").value||"بدون تاریخ",sh=tr.querySelector(".shares").value||"بدون تعداد";if(!confirm(`این خرید حذف شود؟\n\nتاریخ: ${date}\nتعداد سهم: ${sh}`))return;tr.remove();syncRows();render();saveApp()};setDataFieldTabOrder()}
-function syncSellCommissionRow(tr,save=true){const row=active().rows.find(r=>r.id===tr.dataset.id);if(!row)return;const raw=tr.querySelector(".sell-commission").value.trim();if(!raw){row.sellCommission=null;row.sellCommissionPrice=null;row.sellCommissionShares=null}else{row.sellCommission=num(raw);const shares=num(tr.querySelector(".shares").value),price=Number(active().price)||0;row.sellCommissionPrice=shares>0&&price>0?price:null;row.sellCommissionShares=shares>0&&price>0?shares:null}if(save)saveApp()}
+function syncSellCommissionRow(tr,save=true){const row=active().rows.find(r=>r.id===tr.dataset.id);if(!row)return;const raw=tr.querySelector(".sell-commission").value.trim(),state=allocationLedger(active()),remaining=state.complete?(state.remainingByBuy.get(row.id)||0):0;if(!raw){row.sellCommission=null;row.sellCommissionPrice=null;row.sellCommissionShares=null}else{row.sellCommission=num(raw);const price=Number(active().price)||0;row.sellCommissionPrice=remaining>0&&price>0?price:null;row.sellCommissionShares=remaining>0&&price>0?remaining:null}if(save)saveApp()}
 function setDataFieldTabOrder(){
   // Tab is reserved for editable numeric data-entry fields only.
   // Keep the order dynamic so newly added purchase rows are included.
@@ -28,7 +28,20 @@ function setDataFieldTabOrder(){
 
 function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr:not(.sale-tr)")].map(tr=>{const old=active().rows.find(r=>r.id===tr.dataset.id)||{},raw=tr.querySelector(".sell-commission").value.trim();return{id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value),sellCommission:raw===""?null:num(raw),sellCommissionPrice:old.sellCommissionPrice??null,sellCommissionShares:old.sellCommissionShares??null}});sortRows()}
 
-function updateTableOnly(){const s=active(),price=Number(s.price)||0;let ts=0,tc=0;rowsEl.querySelectorAll("tr:not(.sale-tr)").forEach(tr=>{const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c,row=s.rows.find(r=>r.id===tr.dataset.id),fee=row?.sellCommission,feeEntered=fee!==null&&fee!==undefined,feeFresh=feeEntered&&price>0&&Number(row.sellCommissionPrice)===price&&Number(row.sellCommissionShares)===sh;tr.querySelector(".cost").textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);const gain=feeFresh?sh*price-Number(fee)-cost:null,profit=gain===null||!cost?null:gain/cost,pe=tr.querySelector(".profit"),amount=tr.querySelector(".gain-amount"),status=tr.querySelector(".sell-fee-status"),feeInput=tr.querySelector(".sell-commission");pe.textContent=profit===null?"—":fmtPct(profit);amount.textContent=gain===null?"—":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);if(status){status.textContent=!feeEntered?"کارمزد را وارد کنید":feeFresh?"مبنای قیمت پایانی فعلی":"قیمت یا تعداد تغییر کرده؛ به‌روز کنید";status.classList.toggle("stale",feeEntered&&!feeFresh)}if(feeInput){feeInput.classList.toggle("stale",feeEntered&&!feeFresh);feeInput.title=feeEntered&&!feeFresh?"قیمت پایانی یا تعداد سهم پس از ثبت این کارمزد تغییر کرده است؛ مبلغ کارمزد را با مقادیر فعلی جایگزین کنید.":"کارمزد فروش همین تعداد سهم در قیمت پایانی فعلی"}ts+=sh;tc+=cost});$("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&price?(ts*price/tc)-1:null,tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=(s.rows.length+(s.sales||[]).length)?"none":"block";drawChart()}
+function updateTableOnly(){
+ const s=active(),price=Number(s.price)||0,allocation=allocationLedger(s);let ts=0,tc=0;
+ rowsEl.querySelectorAll("tr:not(.sale-tr)").forEach(tr=>{
+  const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c,row=s.rows.find(r=>r.id===tr.dataset.id),state=allocation.byBuy[row?.id]||{unitCost:sh?(cost/sh):0,soldShares:0,realizedGain:0,realizedBasis:0},remaining=allocation.complete?(allocation.remainingByBuy.get(row?.id)||0):null,fee=row?.sellCommission,feeEntered=fee!==null&&fee!==undefined,feeFresh=allocation.complete&&remaining>0&&feeEntered&&price>0&&Number(row.sellCommissionPrice)===price&&Number(row.sellCommissionShares)===remaining;
+  tr.querySelector(".cost").textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);
+  let gain=null;if(allocation.complete&&remaining===0&&state.soldShares>0)gain=state.realizedGain;else if(feeFresh&&cost>0)gain=state.realizedGain+remaining*price-Number(fee)-remaining*state.unitCost;
+  const profit=gain===null||!cost?null:gain/cost,pe=tr.querySelector(".profit"),amount=tr.querySelector(".gain-amount"),status=tr.querySelector(".sell-fee-status"),feeInput=tr.querySelector(".sell-commission");
+  pe.textContent=profit===null?"—":fmtPct(profit);amount.textContent=gain===null?"—":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
+  if(status){if(sh<=0)status.textContent="تعداد خرید را وارد کنید";else if(!allocation.complete)status.textContent="ابتدا همۀ فروش‌ها را تخصیص دهید";else if(remaining===0)status.textContent="همۀ این پله فروخته شده";else status.textContent=!feeEntered?"کارمزد فروش "+fmt(remaining)+" سهم باقی‌مانده را وارد کنید":feeFresh?"برای "+fmt(remaining)+" سهم در قیمت پایانی فعلی":"تعداد یا قیمت تغییر کرده؛ به‌روز کنید";status.classList.toggle("stale",feeEntered&&!feeFresh)}
+  if(feeInput){feeInput.disabled=!allocation.complete||remaining===0||sh<=0;feeInput.style.display=remaining===0&&sh>0?"none":"";feeInput.classList.toggle("stale",feeEntered&&!feeFresh);feeInput.title=feeEntered&&!feeFresh?"قیمت پایانی یا تعداد سهم باقی‌مانده پس از ثبت این کارمزد تغییر کرده است؛ مبلغ را برای تعداد و قیمت فعلی جایگزین کنید.":"کارمزد فروش فرضیِ سهم‌های باقی‌مانده در قیمت پایانی فعلی"}
+  ts+=sh;tc+=cost
+ });
+ $("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&price?(ts*price/tc)-1:null,tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=(s.rows.length+(s.sales||[]).length)?"none":"block";drawChart()
+}
 function render(){sortRows();updatePurchasesTitle();const s=active();$("#activeSymbolTitle").textContent=activeSymbol;priceEl.value=s.price?formatThousands(s.price):"";rowsEl.innerHTML="";s.rows.forEach(r=>addRow(r));$("#tableEmpty").style.display=s.rows.length?"none":"block";updateTableOnly();$("#lastUpdated").textContent=`امروز: ${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;drawChart();setDataFieldTabOrder()}
 priceEl.oninput=()=>{active().price=num(priceEl.value);updateTableOnly();saveApp()};priceEl.onblur=()=>{priceEl.value=formatThousands(priceEl.value);active().price=num(priceEl.value);recordPriceSnapshot();render();saveApp()};$("#addBtn").onclick=()=>{active().rows.unshift({id:id(),date:"",shares:0,price:0,commission:0});render();saveApp();setTimeout(()=>rowsEl.querySelector(".date-input")?.click(),0)};$("#emptyAddBtn").onclick=()=>$("#addBtn").click();
 function addNewSymbol(){const name=prompt("نام نماد را وارد کنید:");if(!name)return;const n=name.trim();if(!n||app.symbols[n])return alert("این نماد قبلاً وجود دارد.");app.symbols[n]=makeSymbol([],0,.12);app.symbolOrder.push(n);activeSymbol=n;overviewMode=false;app.ui=app.ui||{};app.ui.overview=false;renderSymbols();render();saveApp()}$("#renameSymbolBtn").onclick=()=>{const old=activeSymbol,n=prompt("نام جدید نماد را وارد کنید:",old)?.trim();if(!n||n===old)return;if(app.symbols[n])return alert("این نام قبلاً وجود دارد.");app.symbols[n]=app.symbols[old];delete app.symbols[old];const i=app.symbolOrder.indexOf(old);if(i>=0)app.symbolOrder[i]=n;if(app.ui?.chartSymbol===old)app.ui.chartSymbol=n;activeSymbol=n;renderSymbols();render();saveApp()};function deleteSymbolByName(name){
@@ -45,7 +58,7 @@ $("#deleteSymbolBtn").onclick=()=>deleteSymbolByName(activeSymbol);
 $("#resetBtn").onclick=()=>{if(confirm("همهٔ داده‌های برنامه، شامل همهٔ نمادها و خریدها، حذف شوند؟")){localStorage.removeItem(KEY);LEGACY_KEYS.forEach(k=>localStorage.removeItem(k));location.reload()}};
 function openChoice(title,text,cb){$("#choiceTitle").textContent=title;$("#choiceText").textContent=text;$("#choiceModal").classList.add("open");$("#choiceModal").setAttribute("aria-hidden","false");$("#jsonChoice").onclick=()=>{closeChoice();cb("json")};$("#csvChoice").onclick=()=>{closeChoice();cb("csv")}}function closeChoice(){$("#choiceModal").classList.remove("open");$("#choiceModal").setAttribute("aria-hidden","true")};$("#closeChoice").onclick=closeChoice;$("#backupBtn").onclick=()=>openChoice("پشتیبان‌گیری","فرمت فایل پشتیبان را انتخاب کنید.",kind=>kind==="json"?exportJson():exportCsv());$("#restoreBtn").onclick=()=>openChoice("بازیابی","فرمت فایل پشتیبان را انتخاب کنید.",kind=>kind==="json"?$("#importJsonFile").click():$("#importCsvFile").click());
 function datedBackupFilename(extension){const {y,m,d}=currentJalali();return `درصد-سود-بورس ${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}.${extension}`}
-function exportJson(){saveApp();downloadBlob(new Blob([JSON.stringify(app,null,2)],{type:"application/json;charset=utf-8"}),datedBackupFilename("json"))}function csvEscape(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}function exportCsv(){const lines=[["نماد","تاریخ","تعداد سهم","قیمت","کارمزد","کارمزد فروش فرضی","قیمت پایانی مبنای کارمزد","تعداد سهم مبنای کارمزد","مبلغ خرید","قیمت پایانی سهم","مدت (روز)","درصد سود/زیان فرضی"]];Object.entries(app.symbols).forEach(([name,s])=>{s.rows.forEach(r=>{const cost=r.shares*r.price+r.commission,feeFresh=r.sellCommission!=null&&Number(r.sellCommissionPrice)===Number(s.price)&&Number(r.sellCommissionShares)===Number(r.shares),gain=feeFresh?r.shares*s.price-r.sellCommission-cost:null,d=daysBetweenJalali(r.date);lines.push([name,r.date,r.shares,r.price,r.commission,r.sellCommission??"",r.sellCommissionPrice??"",r.sellCommissionShares??"",cost,s.price,d??"",gain===null?"":(gain/cost*100).toFixed(2)])})});downloadBlob(new Blob(["\uFEFF"+lines.map(r=>r.map(csvEscape).join(",")).join("\n")],{type:"text/csv;charset=utf-8"}),datedBackupFilename("csv"))}function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function exportJson(){saveApp();downloadBlob(new Blob([JSON.stringify(app,null,2)],{type:"application/json;charset=utf-8"}),datedBackupFilename("json"))}function csvEscape(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}function exportCsv(){const lines=[["نماد","تاریخ","تعداد سهم","قیمت","کارمزد","سهم فروخته‌شده","سهم باقی‌مانده","کارمزد فروش فرضی مانده","قیمت پایانی مبنای کارمزد","تعداد سهم مبنای کارمزد","مبلغ خرید","قیمت پایانی سهم","مدت (روز)","درصد سود/زیان پله"]];Object.entries(app.symbols).forEach(([name,s])=>{const ledger=allocationLedger(s);s.rows.forEach(r=>{const cost=r.shares*r.price+r.commission,d=daysBetweenJalali(r.date),state=ledger.byBuy[r.id],remaining=ledger.complete?(ledger.remainingByBuy.get(r.id)||0):null,feeFresh=ledger.complete&&remaining>0&&r.sellCommission!=null&&Number(r.sellCommissionPrice)===Number(s.price)&&Number(r.sellCommissionShares)===remaining;let gain=null;if(ledger.complete&&remaining===0&&state?.soldShares>0)gain=state.realizedGain;else if(feeFresh&&cost>0)gain=state.realizedGain+remaining*s.price-r.sellCommission-remaining*state.unitCost;lines.push([name,r.date,r.shares,r.price,r.commission,ledger.complete?(state?.soldShares||0):"",remaining??"",r.sellCommission??"",r.sellCommissionPrice??"",r.sellCommissionShares??"",cost,s.price,d??"",gain===null||!cost?"":(gain/cost*100).toFixed(2)])})});downloadBlob(new Blob(["\uFEFF"+lines.map(r=>r.map(csvEscape).join(",")).join("\n")],{type:"text/csv;charset=utf-8"}),datedBackupFilename("csv"))}function downloadBlob(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function setupDataEntryTabOrder(){
   document.addEventListener('keydown',e=>{
     if(e.key!=='Tab'||e.altKey||e.ctrlKey||e.metaKey)return;
@@ -71,7 +84,7 @@ function setupDataEntryTabOrder(){
 }
 setupDataEntryTabOrder();
 function bindImport(inputId,kind){$(inputId).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const text=await f.text();if(kind==="json"){const incoming=normalizeApp(JSON.parse(text));if(confirm("داده‌های فعلی با داده‌های فایل جایگزین شوند؟")){app=incoming;activeSymbol=app.activeSymbol||app.symbolOrder[0];renderSymbols();render();saveApp()}}else importCsv(text);e.target.value=""}catch(err){alert("فایل قابل خواندن نیست.")}}}bindImport("#importJsonFile","json");bindImport("#importCsvFile","csv");
-function importCsv(text){const rows=parseCsv(text.replace(/^\uFEFF/,""));if(rows.length<2)return alert("فایل CSV داده‌ای ندارد.");const h=rows[0],idx=n=>h.indexOf(n),required=["نماد","تاریخ","تعداد سهم","قیمت","کارمزد"];if(required.some(x=>idx(x)<0))return alert("ستون‌های لازم CSV پیدا نشد.");const grouped={},closingPrices={};rows.slice(1).forEach(r=>{const name=r[idx("نماد")]?.trim()||DEFAULT_SYMBOL,feeIdx=idx("کارمزد فروش فرضی"),priceIdx=idx("قیمت پایانی مبنای کارمزد"),sharesIdx=idx("تعداد سهم مبنای کارمزد"),closeIdx=idx("قیمت پایانی سهم"),rawFee=feeIdx<0?"":(r[feeIdx]||"").trim(),rawClose=closeIdx<0?"":(r[closeIdx]||"").trim();if(rawClose)closingPrices[name]=num(rawClose);(grouped[name]??=[]).push({id:id(),date:faToEn(r[idx("تاریخ")]||""),shares:num(r[idx("تعداد سهم")]),price:num(r[idx("قیمت")]),commission:num(r[idx("کارمزد")]),sellCommission:rawFee===""?null:num(rawFee),sellCommissionPrice:priceIdx<0||!r[priceIdx]?null:num(r[priceIdx]),sellCommissionShares:sharesIdx<0||!r[sharesIdx]?null:num(r[sharesIdx])})});Object.entries(grouped).forEach(([name,rs])=>{if(!app.symbols[name]){app.symbols[name]=makeSymbol([],0,.12);app.symbolOrder.push(name)}app.symbols[name].rows=rs;if(closingPrices[name]>0)app.symbols[name].price=closingPrices[name]});activeSymbol=Object.keys(grouped)[0]||activeSymbol;renderSymbols();render();saveApp()}function parseCsv(text){const out=[];let row=[],cell="",quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quote=false;else cell+=c}else if(c==='"')quote=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=""}else if(c!=='\r')cell+=c}row.push(cell);if(row.length>1||row[0])out.push(row);return out}
+function importCsv(text){const rows=parseCsv(text.replace(/^\uFEFF/,""));if(rows.length<2)return alert("فایل CSV داده‌ای ندارد.");const h=rows[0],idx=n=>h.indexOf(n),required=["نماد","تاریخ","تعداد سهم","قیمت","کارمزد"];if(required.some(x=>idx(x)<0))return alert("ستون‌های لازم CSV پیدا نشد.");const grouped={},closingPrices={};rows.slice(1).forEach(r=>{const name=r[idx("نماد")]?.trim()||DEFAULT_SYMBOL,feeIdx=idx("کارمزد فروش فرضی مانده")>=0?idx("کارمزد فروش فرضی مانده"):idx("کارمزد فروش فرضی"),priceIdx=idx("قیمت پایانی مبنای کارمزد"),sharesIdx=idx("تعداد سهم مبنای کارمزد"),closeIdx=idx("قیمت پایانی سهم"),rawFee=feeIdx<0?"":(r[feeIdx]||"").trim(),rawClose=closeIdx<0?"":(r[closeIdx]||"").trim();if(rawClose)closingPrices[name]=num(rawClose);(grouped[name]??=[]).push({id:id(),date:faToEn(r[idx("تاریخ")]||""),shares:num(r[idx("تعداد سهم")]),price:num(r[idx("قیمت")]),commission:num(r[idx("کارمزد")]),sellCommission:rawFee===""?null:num(rawFee),sellCommissionPrice:priceIdx<0||!r[priceIdx]?null:num(r[priceIdx]),sellCommissionShares:sharesIdx<0||!r[sharesIdx]?null:num(r[sharesIdx])})});Object.entries(grouped).forEach(([name,rs])=>{if(!app.symbols[name]){app.symbols[name]=makeSymbol([],0,.12);app.symbolOrder.push(name)}app.symbols[name].rows=rs;if(closingPrices[name]>0)app.symbols[name].price=closingPrices[name]});activeSymbol=Object.keys(grouped)[0]||activeSymbol;renderSymbols();render();saveApp()}function parseCsv(text){const out=[];let row=[],cell="",quote=false;for(let i=0;i<text.length;i++){const c=text[i];if(quote){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quote=false;else cell+=c}else if(c==='"')quote=true;else if(c===','){row.push(cell);cell=""}else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=""}else if(c!=='\r')cell+=c}row.push(cell);if(row.length>1||row[0])out.push(row);return out}
 // Historical monthly series: only prices actually recorded on their observation date.
 // An observation stores the contemporaneous remaining cost basis so later edits do not
 // silently recalculate a past month's result with today's holdings.
@@ -87,12 +100,12 @@ function recordPriceSnapshot(symbolName=activeSymbol){
  if(idx<0)s.priceHistory.push(snapshot);else s.priceHistory[idx]=snapshot;
  s.priceHistory.sort((a,b)=>a.date.localeCompare(b.date));
 }
-// Group purchases by their Jalali purchase month. FIFO assigns sale proceeds and
-// their actual commissions to the oldest remaining lots. The current closing
+// Group purchases by Jalali month. Assigned sales use their saved purchase-lot allocations;
+// unassigned sales use a provisional FIFO allocation. The current closing
 // price values only the unsold portion; historical prices are not required.
 function monthlyChartData(symbolName=activeSymbol,requestedPeriod=null){
  const symbol=app.symbols[symbolName]||active(),today=currentJalali(),period=Number(requestedPeriod||app.ui?.chartPeriod)||6;
- const currentMonth=today.y*12+today.m-1,groups=new Map(),lots=[];
+ const currentMonth=today.y*12+today.m-1,groups=new Map(),lots=[],lotState=allocationLedger(symbol);
  const events=[...(symbol.rows||[]).map((r,i)=>({...r,kind:'buy',seq:i})),...(symbol.sales||[]).map((r,i)=>({...r,kind:'sell',seq:i}))]
   .filter(r=>parseJ(r.date)&&Number(r.shares)>0&&Number(r.price)>0&&Number(r.commission)>=0)
   .sort((a,b)=>faToEn(a.date).localeCompare(faToEn(b.date))||(a.kind===b.kind?a.seq-b.seq:a.kind==='buy'?-1:1));
@@ -102,17 +115,22 @@ function monthlyChartData(symbolName=activeSymbol,requestedPeriod=null){
    const monthIndex=date.y*12+date.m-1;
    if(!groups.has(monthIndex))groups.set(monthIndex,{monthIndex,month:`${MONTH_NAMES[date.m-1]} ${enToFa(date.y)}`,basis:0,realized:0,remaining:0,unrealized:0});
    const group=groups.get(monthIndex),basis=qty*price+commission;
-   group.basis+=basis;lots.push({group,remaining:qty,unitCost:basis/qty});
+   group.basis+=basis;lots.push({id:e.id,group,remaining:qty,unitCost:basis/qty});
   }else{
-   let remaining=qty;
-   for(const lot of lots){
-    if(remaining<=0)break;
-    const take=Math.min(lot.remaining,remaining);
-    if(take<=0)continue;
-    lot.group.realized+=take*price-commission*(take/qty)-take*lot.unitCost;
-    lot.remaining-=take;remaining-=take;
+   const allocation=lotState.bySale[e.id];
+   if(allocation){
+    for(const a of e.allocations||[]){const lot=lots.find(x=>x.id===a.buyId),take=Number(a.shares)||0;if(!lot||take<=0)continue;lot.group.realized+=take*price-commission*(take/qty)-take*lot.unitCost;lot.remaining-=take;}
+   }else{
+    let remaining=qty;
+    for(const lot of lots){
+     if(remaining<=0)break;
+     const take=Math.min(lot.remaining,remaining);
+     if(take<=0)continue;
+     lot.group.realized+=take*price-commission*(take/qty)-take*lot.unitCost;
+     lot.remaining-=take;remaining-=take;
+    }
    }
-   // Ignore inconsistent oversells in the chart; ledger validation remains separate.
+   // Unassigned sales retain the chart's existing provisional allocation.
   }
  }
  const closing=Number(symbol.price);
@@ -166,10 +184,10 @@ const symbolViewSelectors = [".hero-row", ".cards", ".settings", ".chart-panel",
 
 function dashboardNumber(v){ return fmt(v); }
 function dashboardPct(v){ return fmtPct(v); }
-// Moving weighted-average cost basis. Purchases and sales are processed chronologically.
+// Unassigned sales use moving weighted-average cost; complete lot allocations override it.
 function costLedger(symbol){
  const events=[...(symbol.rows||[]).map((r,i)=>({...r,kind:'buy',seq:i})),...(symbol.sales||[]).map((r,i)=>({...r,kind:'sell',seq:i}))];
- events.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(a.kind==='buy'?-1:1)||a.seq-b.seq);
+ events.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(a.kind===b.kind?a.seq-b.seq:a.kind==='buy'?-1:1));
  let shares=0,cost=0,realized=0,valid=true;const bySale={},byTrade={};
  for(const e of events){const q=Number(e.shares),p=Number(e.price),fee=Number(e.commission);
   // Completely empty transaction rows are drafts, not invalid historical trades.
@@ -181,8 +199,38 @@ function costLedger(symbol){
   }
   byTrade[e.kind+':'+e.id]={shares,average:shares?cost/shares:0};
  }
+ const matched=allocationLedger(symbol);
+ if(matched.complete&&valid){let matchedShares=0,matchedCost=0,matchedRealized=0;for(const [buyId,state] of Object.entries(matched.byBuy)){const qty=matched.remainingByBuy.get(buyId)||0;matchedShares+=qty;matchedCost+=qty*state.unitCost}Object.values(matched.bySale).forEach(sale=>matchedRealized+=sale.gain);return{shares:matchedShares,cost:matchedCost,realized:matchedRealized,bySale:{...bySale,...matched.bySale},byTrade,valid}}
  return {shares,cost,realized,bySale,byTrade,valid};
 }
+function saleIsComplete(sale){return !!parseJ(sale.date)&&Number.isInteger(Number(sale.shares))&&Number(sale.shares)>0&&Number(sale.price)>0&&Number.isFinite(Number(sale.commission))&&Number(sale.commission)>=0}
+function allocationLedger(symbol){
+ const byBuy={},bySale={},remaining=new Map();
+ const events=[...(symbol.rows||[]).map((r,i)=>({...r,kind:'buy',seq:i})),...(symbol.sales||[]).map((r,i)=>({...r,kind:'sell',seq:i}))]
+  .sort((a,b)=>faToEn(a.date||'').localeCompare(faToEn(b.date||''))||(a.kind===b.kind?a.seq-b.seq:a.kind==='buy'?-1:1));
+ let blockedSale=null;
+ for(const e of events){
+  const q=Number(e.shares),p=Number(e.price),fee=Number(e.commission)||0;
+  if(e.kind==='buy'){
+   if(!parseJ(e.date)||!Number.isInteger(q)||q<=0||p<=0||fee<0)continue;
+   const unit=(q*p+fee)/q;remaining.set(e.id,q);byBuy[e.id]={unitCost:unit,soldShares:0,realizedGain:0,realizedBasis:0};
+   continue;
+  }
+  if(!q)continue;
+  if(!saleIsComplete(e)){blockedSale=e;break}
+  const allocs=Array.isArray(e.allocations)?e.allocations:[];
+  const total=allocs.reduce((n,a)=>n+(Number(a.shares)||0),0);
+  if(total!==q||allocs.some(a=>!Number.isInteger(Number(a.shares))||Number(a.shares)<=0)){blockedSale=e;break}
+  let basis=0,valid=true;
+  for(const a of allocs){const lot=byBuy[a.buyId],available=remaining.get(a.buyId)||0,qty=Number(a.shares);if(!lot||available<qty){valid=false;break}basis+=qty*lot.unitCost}
+  if(!valid){blockedSale=e;break}
+  let saleNet=0;
+  for(const a of allocs){const lot=byBuy[a.buyId],qty=Number(a.shares),net=qty*p-fee*qty/q,gain=net-qty*lot.unitCost;saleNet+=net;lot.soldShares+=qty;lot.realizedGain+=gain;lot.realizedBasis+=qty*lot.unitCost;remaining.set(a.buyId,(remaining.get(a.buyId)||0)-qty)}
+  const gain=saleNet-basis;bySale[e.id]={basis,net:saleNet,gain,pct:basis?gain/basis:null,allocated:q};
+ }
+ return {byBuy,bySale,remainingByBuy:remaining,complete:!blockedSale,blockedSale};
+}
+
 function portfolioData(){
   const items=[];
   let shares=0, purchases=0, investment=0, current=0;
@@ -560,6 +608,7 @@ function saleRow(sale){
   input.oninput=()=>{syncSaleRow(tr,false)};
   input.onblur=()=>{if(!syncSaleRow(tr,true))return;input.value=formatThousands(input.value);updateSaleRowDisplay(tr);renderSymbols();applyTradeFilter()};
  }
+ const actionCell=tr.querySelector('.delete').parentElement,allocate=document.createElement('button');allocate.type='button';allocate.className='allocation-btn';allocate.textContent='اختصاص خرید';allocate.title='تخصیص تعداد فروخته‌شده به یک یا چند پلهٔ خرید';allocate.onclick=()=>openSaleAllocation(sale.id);actionCell.insertBefore(allocate,tr.querySelector('.delete'));
  const del=tr.querySelector('.delete');del.title='حذف فروش';del.onclick=()=>{if(!confirm('این فروش حذف شود؟'))return;active().sales=active().sales.filter(x=>x.id!==sale.id);render();renderSymbols();saveApp()};
  return tr;
 }
@@ -573,21 +622,22 @@ function syncSaleRow(tr,validate=true){
  Object.assign(sale,candidate);saveApp();return true;
 }
 function updateSaleRowDisplay(tr){
- const info=costLedger(active()).bySale[tr.dataset.id];
+ const sale=active().sales.find(x=>x.id===tr.dataset.id),specific=allocationLedger(active()).bySale[tr.dataset.id],info=specific||costLedger(active()).bySale[tr.dataset.id];
  tr.querySelector('.cost').textContent=info?fmt(info.net):'—';
  tr.querySelector('.days').textContent=enToFa(daysBetweenJalali(tr.querySelector('.jalali').value)??'—');
  const pct=tr.querySelector('.profit'),amount=tr.querySelector('.gain-amount');
  pct.textContent=info?fmtPct(info.pct):'—';amount.textContent=info?(info.gain>0?'+':'')+fmt(info.gain):'—';
  for(const el of [pct,amount]){el.classList.toggle('negative',!!info&&info.gain<0);el.classList.toggle('positive',!!info&&info.gain>0)}
+ const btn=tr.querySelector('.allocation-btn'),allocQty=(sale?.allocations||[]).reduce((n,a)=>n+(Number(a.shares)||0),0);if(btn){btn.textContent=specific?fmt(allocQty)+'/'+fmt(sale.shares)+' سهم':'اختصاص خرید';btn.title=specific?'سود این فروش بر اساس پله‌های تخصیص‌یافته است.':'برای نمایش سود هر پله، خریدهای منبع این فروش را مشخص کنید.'}
 }
 function renderCombinedTrades(){
- const symbol=active(),ledger=costLedger(symbol),body=rowsEl;
+ const symbol=active(),ledger=costLedger(symbol),lotLedger=allocationLedger(symbol),body=rowsEl;
  body.querySelectorAll('tr.sale-tr').forEach(x=>x.remove());
-
- for(const sale of symbol.sales||[]){const tr=saleRow(sale),info=ledger.bySale[sale.id],state=ledger.byTrade['sell:'+sale.id];
+ for(const sale of symbol.sales||[]){const tr=saleRow(sale),info=lotLedger.bySale[sale.id]||ledger.bySale[sale.id],allocated=!!lotLedger.bySale[sale.id],allocQty=(sale.allocations||[]).reduce((n,a)=>n+(Number(a.shares)||0),0);
   tr.querySelector('.cost').textContent=info?fmt(info.net):'—';tr.querySelector('.days').textContent=enToFa(daysBetweenJalali(sale.date)??'—');
   const pct=tr.querySelector('.profit'),amount=tr.querySelector('.gain-amount');pct.textContent=info?fmtPct(info.pct):'—';amount.textContent=info?(info.gain>0?'+':'')+fmt(info.gain):'—';
   for(const el of [pct,amount]){el.classList.toggle('negative',!!info&&info.gain<0);el.classList.toggle('positive',!!info&&info.gain>0)}
+  const button=tr.querySelector('.allocation-btn');button.textContent=allocated?fmt(allocQty)+'/'+fmt(sale.shares)+' سهم':'اختصاص خرید';button.title=allocated?'سود این فروش بر اساس پله‌های تخصیص‌یافته محاسبه شده است.':'تا زمان تخصیص، سود این فروش بر اساس میانگین موزون نمایش داده می‌شود.';
   body.appendChild(tr);
  }
  [...body.querySelectorAll('tr')].sort((a,b)=>{const date=tr=>faToEn(tr.querySelector('.jalali')?.value||'');const ad=date(a),bd=date(b);if(!ad&&!bd)return 0;if(!ad)return -1;if(!bd)return 1;return bd.localeCompare(ad)}).forEach(tr=>body.appendChild(tr));
@@ -606,6 +656,64 @@ function createBlankTrade(kind){
 $('#sellBtn').onclick=()=>createBlankTrade('sell');
 $('#addBtn').onclick=()=>createBlankTrade('buy');
 $('#emptyAddBtn').onclick=()=>$('#addBtn').click();
+function allocationCapacitiesBefore(symbol,target){
+ if(!saleIsComplete(target))return{remaining:new Map(),blocked:target};
+ const events=[...(symbol.rows||[]).map((r,i)=>({...r,kind:'buy',seq:i})),...(symbol.sales||[]).map((r,i)=>({...r,kind:'sell',seq:i}))]
+  .sort((a,b)=>faToEn(a.date||'').localeCompare(faToEn(b.date||''))||(a.kind===b.kind?a.seq-b.seq:a.kind==='buy'?-1:1));
+ const remaining=new Map();
+ for(const e of events){
+  if(e.kind==='sell'&&e.id===target.id)break;
+  if(e.kind==='buy'){const q=Number(e.shares);if(parseJ(e.date)&&Number.isInteger(q)&&q>0&&Number(e.price)>0)remaining.set(e.id,q);continue}
+  const q=Number(e.shares);if(!q)continue;
+  if(!saleIsComplete(e))return{remaining,blocked:e};
+  const allocs=Array.isArray(e.allocations)?e.allocations:[],sum=allocs.reduce((n,a)=>n+(Number(a.shares)||0),0);
+  if(sum!==q||allocs.some(a=>!Number.isInteger(Number(a.shares))||Number(a.shares)<=0))return{remaining,blocked:e};
+  for(const a of allocs){const used=Number(a.shares),left=remaining.get(a.buyId)||0;if(left<used)return{remaining,blocked:e};remaining.set(a.buyId,left-used)}
+ }
+ const targetIndex=events.findIndex(e=>e.kind==='sell'&&e.id===target.id);
+ for(let i=targetIndex+1;i<events.length;i++){const e=events[i];if(e.kind!=='sell')continue;for(const a of e.allocations||[]){if(remaining.has(a.buyId))remaining.set(a.buyId,Math.max(0,(remaining.get(a.buyId)||0)-(Number(a.shares)||0)))}}
+ return{remaining,blocked:null};
+}
+let allocationTargetId=null;
+function closeSaleAllocation(){const modal=$('#saleAllocationModal');modal.classList.remove('open');modal.setAttribute('aria-hidden','true');allocationTargetId=null}
+function updateAllocationForm(sale){
+ const body=$('#allocationRows'),status=$('#allocationStatus'),save=$('#saveAllocation'),inputs=[...body.querySelectorAll('.allocation-qty')],sum=inputs.reduce((n,i)=>n+(Number(i.value)||0),0),valid=inputs.every(i=>Number.isInteger(Number(i.value||0))&&Number(i.value||0)>=0&&Number(i.value||0)<=Number(i.max));
+ status.textContent='تخصیص ثبت‌شده: '+fmt(sum)+' از '+fmt(sale.shares)+' سهم';save.disabled=!valid||sum!==Number(sale.shares);
+}
+function openSaleAllocation(saleId){
+ const symbol=active(),sale=(symbol.sales||[]).find(s=>s.id===saleId);if(!sale)return;
+ allocationTargetId=saleId;const modal=$('#saleAllocationModal'),body=$('#allocationRows'),title=$('#allocationTitle'),intro=$('#allocationIntro'),status=$('#allocationStatus'),save=$('#saveAllocation'),clear=$('#clearAllocation');
+ title.textContent='تخصیص فروش به پله‌های خرید';body.innerHTML='';save.disabled=true;clear.hidden=!(sale.allocations||[]).length;
+ intro.textContent='فروش '+(sale.date?enToFa(sale.date):'بدون تاریخ')+'، '+fmt(sale.shares)+' سهم. تعداد فروخته‌شده را میان پله‌های خرید تقسیم کن؛ کارمزد واقعی فروش به نسبت تعداد سهم میان پله‌ها سرشکن می‌شود.';
+ if(!saleIsComplete(sale))status.textContent='برای تخصیص، تاریخ، تعداد، قیمت و کارمزد فروش را کامل کن.';
+ else{
+  const plan=allocationCapacitiesBefore(symbol,sale);
+  if(plan.blocked)status.textContent='ابتدا فروش قدیمی‌تر '+(plan.blocked.date?enToFa(plan.blocked.date):'بدون تاریخ')+' را کامل و به پله‌های خرید تخصیص بده.';
+  else{
+   const already=new Map((sale.allocations||[]).map(a=>[a.buyId,Number(a.shares)||0]));
+   const eligible=(symbol.rows||[]).filter(b=>parseJ(b.date)&&faToEn(b.date)<=faToEn(sale.date)&&Number(b.shares)>0&&Number(b.price)>0).sort((a,b)=>faToEn(b.date).localeCompare(faToEn(a.date)));
+   eligible.forEach(b=>{
+    const available=plan.remaining.get(b.id)||0;if(available<=0)return;
+    const tr=document.createElement('tr'),desc=document.createElement('td'),left=document.createElement('td'),field=document.createElement('td'),input=document.createElement('input');
+    desc.textContent=enToFa(b.date)+' · '+fmt(b.shares)+' سهم × '+fmt(b.price)+' ریال';left.textContent=fmt(available);
+    input.type='number';input.min='0';input.max=String(available);input.step='1';input.value=String(already.get(b.id)||0);input.className='allocation-qty';input.dataset.buyId=b.id;input.setAttribute('aria-label','تعداد تخصیص از خرید '+enToFa(b.date));field.appendChild(input);tr.append(desc,left,field);body.appendChild(tr);
+    input.oninput=()=>updateAllocationForm(sale);
+   });
+   if(!body.children.length)status.textContent='برای این فروش، پلهٔ خریدِ قابل تخصیصی پیدا نشد.';
+   else updateAllocationForm(sale);
+  }
+ }
+ modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+}
+$('#saveAllocation').onclick=()=>{
+ const symbol=active(),sale=(symbol.sales||[]).find(s=>s.id===allocationTargetId);if(!sale)return;
+ const inputs=[...$('#allocationRows').querySelectorAll('.allocation-qty')],allocations=inputs.map(i=>({buyId:i.dataset.buyId,shares:Number(i.value)||0})).filter(a=>a.shares>0);
+ if(allocations.reduce((n,a)=>n+a.shares,0)!==Number(sale.shares)||allocations.some(a=>!Number.isInteger(a.shares)))return;
+ sale.allocations=allocations;saveApp();closeSaleAllocation();renderSymbols();render();
+};
+$('#clearAllocation').onclick=()=>{const symbol=active(),sale=(symbol.sales||[]).find(s=>s.id===allocationTargetId);if(!sale)return;delete sale.allocations;saveApp();closeSaleAllocation();renderSymbols();render()};
+$('#cancelAllocation').onclick=closeSaleAllocation;$('#saleAllocationModal').onclick=e=>{if(e.target.id==='saleAllocationModal')closeSaleAllocation()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#saleAllocationModal').classList.contains('open'))closeSaleAllocation()});
 function validSales(symbol,sales){return costLedger({...symbol,sales}).valid;}
 // Cash movements are derived from recorded trades, plus manual deposits/withdrawals.
 function tradeCashFlow(){return Object.values(app.symbols).reduce((sum,s)=>sum+(s.sales||[]).reduce((a,r)=>a+num(r.shares)*num(r.price)-num(r.commission),0)-(s.rows||[]).reduce((a,r)=>a+num(r.shares)*num(r.price)+num(r.commission),0),0)}
