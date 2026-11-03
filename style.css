@@ -438,3 +438,6 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
 
 /* فهرست نمادها همراه صفحه حرکت می‌کند تا روی بخش‌های اصلی نیفتد. */
 #symbolList.sidebar{position:static;top:auto;height:auto;z-index:auto;margin:0 0 14px}
+
+/* خلاصۀ شاخص‌ها و نمودارهای نمای کلی حذف شده‌اند. */
+.overview-top,.overview-chart-panel{display:none!important}
