@@ -7,7 +7,7 @@ const saveWithoutIndicator=saveApp;privacy.addEventListener('click',()=>{setPriv
 const status=document.getElementById('saveIndicator');let hideStatus;
 // Wrap the existing persistence function; do not change its data or key.
 const oldSave=saveApp;saveApp=function(){oldSave();status.classList.add('is-visible');clearTimeout(hideStatus);hideStatus=setTimeout(()=>status.classList.remove('is-visible'),1700)};
-const labels=['نماد','قیمت پایانی','تعداد سهم','بهای تمام‌شده','ارزش روز','سود/زیان'];
+const labels=['نماد','قیمت پایانی','تعداد سهم','بهای تمام‌شده','ارزش روز','سود و زیان'];
 // Remove the old realized column from saved hidden-column indices once.
 if(Number(ui().overviewColumnsLayout||1)<2){
   const oldHidden=Array.isArray(ui().hiddenColumns)?ui().hiddenColumns:[];
