@@ -608,7 +608,7 @@ function saleRow(sale){
   input.oninput=()=>{syncSaleRow(tr,false)};
   input.onblur=()=>{if(!syncSaleRow(tr,true))return;input.value=formatThousands(input.value);render();renderSymbols()};
  }
- const actionCell=tr.querySelector('.delete').parentElement,allocate=document.createElement('button');allocate.type='button';allocate.className='allocation-btn';allocate.textContent='اختصاص خرید';allocate.title='تخصیص تعداد فروخته‌شده به یک یا چند پلهٔ خرید';allocate.onclick=()=>openSaleAllocation(sale.id);actionCell.insertBefore(allocate,tr.querySelector('.delete'));
+ const actionCell=tr.querySelector('.delete').parentElement,allocate=document.createElement('button');allocate.type='button';allocate.className='allocation-btn';allocate.textContent='انتخاب خرید';allocate.title='تخصیص تعداد فروخته‌شده به یک یا چند پلهٔ خرید';allocate.onclick=()=>openSaleAllocation(sale.id);actionCell.insertBefore(allocate,tr.querySelector('.delete'));
  const del=tr.querySelector('.delete');del.title='حذف فروش';del.onclick=()=>{if(!confirm('این فروش حذف شود؟'))return;active().sales=active().sales.filter(x=>x.id!==sale.id);render();renderSymbols();saveApp()};
  return tr;
 }
@@ -628,7 +628,7 @@ function updateSaleRowDisplay(tr){
  const pct=tr.querySelector('.profit'),amount=tr.querySelector('.gain-amount');
  pct.textContent=info?fmtPct(info.pct):'—';amount.textContent=info?(info.gain>0?'+':'')+fmt(info.gain):'—';
  for(const el of [pct,amount]){el.classList.toggle('negative',!!info&&info.gain<0);el.classList.toggle('positive',!!info&&info.gain>0)}
- const btn=tr.querySelector('.allocation-btn'),allocQty=(sale?.allocations||[]).reduce((n,a)=>n+(Number(a.shares)||0),0);if(btn){btn.textContent=specific?fmt(allocQty)+'/'+fmt(sale.shares)+' سهم':'اختصاص خرید';btn.title=specific?'سود این فروش بر اساس پله‌های تخصیص‌یافته است.':'برای نمایش سود هر پله، خریدهای منبع این فروش را مشخص کنید.'}
+ const btn=tr.querySelector('.allocation-btn'),allocQty=(sale?.allocations||[]).reduce((n,a)=>n+(Number(a.shares)||0),0);if(btn){btn.textContent=specific?fmt(allocQty)+'/'+fmt(sale.shares)+' سهم':'انتخاب خرید';btn.title=specific?'سود این فروش بر اساس پله‌های تخصیص‌یافته است.':'برای نمایش سود هر پله، خریدهای منبع این فروش را مشخص کنید.'}
 }
 function renderCombinedTrades(){
  const symbol=active(),ledger=costLedger(symbol),lotLedger=allocationLedger(symbol),body=rowsEl;
@@ -637,7 +637,7 @@ function renderCombinedTrades(){
   tr.querySelector('.cost').textContent=info?fmt(info.net):'—';tr.querySelector('.days').textContent=enToFa(daysBetweenJalali(sale.date)??'—');
   const pct=tr.querySelector('.profit'),amount=tr.querySelector('.gain-amount');pct.textContent=info?fmtPct(info.pct):'—';amount.textContent=info?(info.gain>0?'+':'')+fmt(info.gain):'—';
   for(const el of [pct,amount]){el.classList.toggle('negative',!!info&&info.gain<0);el.classList.toggle('positive',!!info&&info.gain>0)}
-  const button=tr.querySelector('.allocation-btn');button.textContent=allocated?fmt(allocQty)+'/'+fmt(sale.shares)+' سهم':'اختصاص خرید';button.title=allocated?'سود این فروش بر اساس پله‌های تخصیص‌یافته محاسبه شده است.':'تا زمان تخصیص، سود این فروش بر اساس میانگین موزون نمایش داده می‌شود.';
+  const button=tr.querySelector('.allocation-btn');button.textContent=allocated?fmt(allocQty)+'/'+fmt(sale.shares)+' سهم':'انتخاب خرید';button.title=allocated?'سود این فروش بر اساس پله‌های تخصیص‌یافته محاسبه شده است.':'تا زمان تخصیص، سود این فروش بر اساس میانگین موزون نمایش داده می‌شود.';
   body.appendChild(tr);
  }
  [...body.querySelectorAll('tr')].sort((a,b)=>{const date=tr=>faToEn(tr.querySelector('.jalali')?.value||'');const ad=date(a),bd=date(b);if(!ad&&!bd)return 0;if(!ad)return -1;if(!bd)return 1;return bd.localeCompare(ad)}).forEach(tr=>body.appendChild(tr));
@@ -684,7 +684,7 @@ function openSaleAllocation(saleId){
  const symbol=active(),sale=(symbol.sales||[]).find(s=>s.id===saleId);if(!sale)return;
  allocationTargetId=saleId;const modal=$('#saleAllocationModal'),body=$('#allocationRows'),title=$('#allocationTitle'),intro=$('#allocationIntro'),status=$('#allocationStatus'),save=$('#saveAllocation'),clear=$('#clearAllocation');
  title.textContent='تخصیص فروش به پله‌های خرید';body.innerHTML='';save.disabled=true;clear.hidden=!(sale.allocations||[]).length;
- intro.textContent='فروش '+(sale.date?enToFa(sale.date):'بدون تاریخ')+'، '+fmt(sale.shares)+' سهم. تعداد فروخته‌شده را میان پله‌های خرید تقسیم کن؛ کارمزد واقعی فروش به نسبت تعداد سهم میان پله‌ها سرشکن می‌شود.';
+ intro.textContent='فروش '+(sale.date?enToFa(sale.date):'بدون تاریخ')+'، '+fmt(sale.shares)+' سهم. تعداد سهم فروخته‌شده از هر خرید را وارد کن؛ جمع باید دقیقاً برابر تعداد این فروش باشد. بعد «ذخیرۀ تخصیص» را بزن. کارمزد واقعی فروش به نسبت سهم‌ها میان خریدها تقسیم می‌شود.';
  if(!saleIsComplete(sale))status.textContent='برای تخصیص، تاریخ، تعداد، قیمت و کارمزد فروش را کامل کن.';
  else{
   const plan=allocationCapacitiesBefore(symbol,sale);

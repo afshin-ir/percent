@@ -538,3 +538,5 @@ body.privacy-mode canvas,body.privacy-mode #overviewMonthly svg,body.privacy-mod
   .trades-heading-group{flex-direction:column;align-items:stretch;gap:8px}
   .closing-price-control{width:100%;max-width:380px;flex:0 1 auto}
 }
+
+.trade-guide{margin:6px 0 0;padding:9px 11px;background:#eff6ff;border:1px solid #d5e5f7;border-radius:8px;color:#365a7c;font-size:12px;line-height:1.9;max-width:900px}.trade-guide-note{margin:5px 0 0;font-size:11px;line-height:1.7}
