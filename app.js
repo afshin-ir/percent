@@ -51,12 +51,26 @@ function updateBuySalesButton(tr){
  const buyId=tr.dataset.id,total=(active().sales||[]).filter(saleIsComplete).reduce((n,s)=>n+(s.allocations||[]).filter(a=>a.buyId===buyId).reduce((x,a)=>x+(Number(a.shares)||0),0),0);
  const button=tr.querySelector('.buy-sales-btn');if(button){button.textContent=total?('فروش‌ها · '+fmt(total)+' سهم'):'＋ ثبت فروش';button.title='دیدن یا ثبت فروش برای همین خرید'}
 }
+function togglePurchaseEdit(tr){
+ const editing=tr.dataset.purchaseEditMode==='true',buyId=tr.dataset.id;
+ if(editing){
+  const shares=num(tr.querySelector('.shares').value),date=faToEn(tr.querySelector('.jalali').value);
+  const linked=(active().sales||[]).filter(s=>(s.allocations||[]).some(a=>a.buyId===buyId&&Number(a.shares)>0));
+  const assigned=linked.reduce((n,s)=>n+(s.allocations||[]).filter(a=>a.buyId===buyId).reduce((sum,a)=>sum+(Number(a.shares)||0),0),0);
+  if(shares<assigned){alert('تعداد خرید نمی‌تواند از تعداد سهم‌های فروخته‌شده کمتر باشد. ابتدا تعداد فروش‌ها را اصلاح کن.');return}
+  if(linked.some(s=>!parseJ(s.date)||date&&faToEn(s.date)<date)){alert('تاریخ خرید نمی‌تواند بعد از تاریخ فروش‌های ثبت‌شده باشد. ابتدا تاریخ فروش را اصلاح کن.');return}
+  delete tr.dataset.purchaseEditMode;
+ }else tr.dataset.purchaseEditMode='true';
+ updateTableOnly();setDataFieldTabOrder();saveApp();
+ if(!editing)tr.querySelector('.shares')?.focus();
+}
 
 function addRow(data={date:"",shares:"",price:"",commission:""}){
  const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||id();tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?formatThousands(data.shares):"";tr.querySelector(".price").value=data.price?formatThousands(data.price):"";tr.querySelector(".commission").value=data.commission?formatThousands(data.commission):"";
  const sellFeeInput=tr.querySelector(".sell-commission");sellFeeInput.value=data.sellCommission==null?"":formatThousands(data.sellCommission);
  rowsEl.appendChild(tr);
  const actionCell=tr.querySelector('.delete').parentElement,buySales=document.createElement('button');buySales.type='button';buySales.className='allocation-btn buy-sales-btn';buySales.textContent='فروش‌های این خرید';buySales.title='ثبت یا دیدن فروش‌هایی که از این خرید انجام شده‌اند';buySales.onclick=()=>toggleBuySalesEditor(tr);actionCell.insertBefore(buySales,tr.querySelector('.delete'));
+ const purchaseEdit=document.createElement('button');purchaseEdit.type='button';purchaseEdit.className='allocation-btn purchase-edit-btn';purchaseEdit.hidden=true;purchaseEdit.onclick=()=>togglePurchaseEdit(tr);actionCell.insertBefore(purchaseEdit,tr.querySelector('.delete'));
  tr.querySelector(".date-input").onclick=()=>openCalendar(tr);tr.querySelector(".date-input").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(tr)}};
  [".shares",".price",".commission"].forEach(sel=>{const input=tr.querySelector(sel);input.oninput=()=>{syncRows();updateTableOnly()};input.onblur=()=>{input.value=formatThousands(input.value);syncRows();updateTableOnly();saveApp()}});
  sellFeeInput.oninput=()=>{syncSellCommissionRow(tr,false);updateTableOnly()};sellFeeInput.onblur=()=>{sellFeeInput.value=formatThousands(sellFeeInput.value);syncSellCommissionRow(tr,true);updateTableOnly()};
@@ -101,6 +115,10 @@ function updateTableOnly(){
   pe.textContent=profit===null?"—":fmtPct(profit);amount.textContent=gain===null?"—":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
   if(status){if(sh<=0)status.textContent="ابتدا تعداد خرید را وارد کن";else if(!remainingKnown)status.textContent="اطلاعات فروش‌ها را کامل کن";else if(remaining===0)status.textContent="تمام سهم‌ها فروخته شده‌اند";else if(!price)status.textContent="ابتدا قیمت پایانی را وارد کن";else if(!feeEntered)status.textContent="کارمزد این تعداد را وارد کن";else status.textContent=feeFresh?"برای "+fmt(remaining)+" سهم در قیمت پایانی فعلی":"قیمت یا تعداد تغییر کرده؛ کارمزد را به‌روز کن";status.classList.toggle("stale",feeEntered&&!feeFresh)}
   if(feeInput){feeInput.disabled=!remainingKnown||remaining===0||sh<=0||price<=0;feeInput.style.display=remainingKnown&&remaining===0&&sh>0?"none":"";feeInput.classList.toggle("stale",feeEntered&&!feeFresh);feeInput.title=feeEntered&&!feeFresh?"قیمت پایانی یا تعداد سهم باقی‌مانده تغییر کرده؛ مبلغ کارمزد را دوباره از کارگزاری بگیر.":"کارمزد فروش همین تعداد سهم در قیمت پایانی فعلی"}
+  const fullySold=remainingKnown&&sh>0&&remaining===0&&state.soldShares>=sh,editing=tr.dataset.purchaseEditMode==='true',locked=fullySold&&!editing;
+  tr.classList.toggle('purchase-row-locked',locked);tr.classList.toggle('purchase-row-editing',editing);
+  ['.jalali','.shares','.price','.commission'].forEach(selector=>{const input=tr.querySelector(selector);if(!input)return;input.disabled=locked;input.title=locked?'این خرید کامل فروخته شده است؛ برای اصلاح، «اصلاح خرید» را بزن.':''});
+  const editButton=tr.querySelector('.purchase-edit-btn');if(editButton){editButton.hidden=!fullySold&&!editing;editButton.textContent=editing?'پایان اصلاح':'اصلاح خرید';editButton.title=editing?'پایان اصلاح اطلاعات خرید':'بازکردن فیلدهای این خرید برای اصلاح'}
   updateBuySalesButton(tr);ts+=sh;tc+=cost
  });
  $("#currentPriceCard2").textContent=price?fmt(price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&price?(ts*price/tc)-1:null,tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=s.rows.length?"none":"block";drawChart()
