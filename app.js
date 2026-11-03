@@ -21,7 +21,7 @@ function toggleBuySalesEditor(buyRow){
  closeBuySalesEditor();
  const symbol=active(),buy=(symbol.rows||[]).find(r=>r.id===buyId);if(!buy)return;
  const detail=document.createElement('tr');detail.className='buy-sales-editor-row';detail.dataset.buyId=buyId;
- const cell=document.createElement('td');cell.colSpan=12;detail.appendChild(cell);
+ const cell=document.createElement('td');cell.colSpan=10;detail.appendChild(cell);
  const panel=document.createElement('div');panel.className='buy-sales-inline';
  const heading=document.createElement('strong');heading.textContent='فروش‌های این خرید · ' +(buy.date?enToFa(buy.date):'بدون تاریخ')+' · '+fmt(buy.shares)+' سهم';
  const intro=document.createElement('p');intro.className='muted';intro.textContent='تاریخ، تعداد، قیمت و کارمزد هر فروش را اینجا وارد کن. یک خرید می‌تواند چند فروش داشته باشد.';
