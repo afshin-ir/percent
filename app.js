@@ -67,13 +67,11 @@ function togglePurchaseEdit(tr){
 
 function addRow(data={date:"",shares:"",price:"",commission:""}){
  const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||id();tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?formatThousands(data.shares):"";tr.querySelector(".price").value=data.price?formatThousands(data.price):"";tr.querySelector(".commission").value=data.commission?formatThousands(data.commission):"";
- const sellFeeInput=tr.querySelector(".sell-commission");sellFeeInput.value=data.sellCommission==null?"":formatThousands(data.sellCommission);
  rowsEl.appendChild(tr);
  const actionCell=tr.querySelector('.delete').parentElement,buySales=document.createElement('button');buySales.type='button';buySales.className='allocation-btn buy-sales-btn';buySales.textContent='فروش‌های این خرید';buySales.title='ثبت یا دیدن فروش‌هایی که از این خرید انجام شده‌اند';buySales.onclick=()=>toggleBuySalesEditor(tr);actionCell.insertBefore(buySales,tr.querySelector('.delete'));
  const purchaseEdit=document.createElement('button');purchaseEdit.type='button';purchaseEdit.className='allocation-btn purchase-edit-btn';purchaseEdit.hidden=true;purchaseEdit.onclick=()=>togglePurchaseEdit(tr);actionCell.insertBefore(purchaseEdit,tr.querySelector('.delete'));
  tr.querySelector(".date-input").onclick=()=>openCalendar(tr);tr.querySelector(".date-input").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(tr)}};
  [".shares",".price",".commission"].forEach(sel=>{const input=tr.querySelector(sel);input.oninput=()=>{syncRows();updateTableOnly()};input.onblur=()=>{input.value=formatThousands(input.value);syncRows();updateTableOnly();saveApp()}});
- sellFeeInput.oninput=()=>{syncSellCommissionRow(tr,false);updateTableOnly()};sellFeeInput.onblur=()=>{sellFeeInput.value=formatThousands(sellFeeInput.value);syncSellCommissionRow(tr,true);updateTableOnly()};
  tr.querySelector(".delete").onclick=()=>{const date=tr.querySelector(".jalali").value||"بدون تاریخ",sh=tr.querySelector(".shares").value||"بدون تعداد";if(!confirm(`این خرید حذف شود؟\n\nتاریخ: ${date}\nتعداد سهم: ${sh}`))return;tr.remove();syncRows();render();saveApp()};
  setDataFieldTabOrder()
 }
