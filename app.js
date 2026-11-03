@@ -102,18 +102,17 @@ function buySalesSummary(symbol,buyId,allocation=allocationLedger(symbol)){
   if(assigned<=0)continue;
   shares+=assigned;gross+=assigned*(Number(sale.price)||0);commission+=(Number(sale.commission)||0)*assigned/quantity;
  }
- return{shares,gross,averagePrice:shares?gross/shares:null,commission,netAmount:gross-commission};
+ return{shares,gross,averagePrice:shares?gross/shares:null,commission};
 }
 function updateTableOnly(){
  const s=active(),allocation=allocationLedger(s);let ts=0,tc=0;
  rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row)").forEach(tr=>{
   const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c,row=s.rows.find(r=>r.id===tr.dataset.id),state=allocation.byBuy[row?.id]||{unitCost:sh?(cost/sh):0,soldShares:0,realizedGain:0,realizedBasis:0};
   const remainingInfo=row?buyRemainingState(s,row,allocation):{remaining:sh,known:false},remaining=remainingInfo.remaining,remainingKnown=remainingInfo.known;
-  tr.querySelector(".cost").textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);
-  const sold=buySalesSummary(s,row?.id,allocation),salePrice=tr.querySelector('.sale-price-summary'),saleCommission=tr.querySelector('.sale-commission-summary'),saleAmount=tr.querySelector('.sale-amount-summary');
+  const costCell=tr.querySelector(".cost");if(costCell)costCell.textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);
+  const sold=buySalesSummary(s,row?.id,allocation),salePrice=tr.querySelector('.sale-price-summary'),saleCommission=tr.querySelector('.sale-commission-summary');
   if(salePrice){salePrice.textContent=sold.shares?fmt(sold.averagePrice):'';salePrice.title=sold.shares?'میانگین موزون قیمت فروش '+fmt(sold.shares)+' سهم ثبت‌شده':''}
   if(saleCommission){saleCommission.textContent=sold.shares?fmt(sold.commission):'';saleCommission.title=sold.shares?'جمع کارمزد واقعی فروش‌های ثبت‌شده برای این خرید':''}
-  if(saleAmount){saleAmount.textContent=sold.shares?fmt(sold.netAmount):'';saleAmount.title=sold.shares?'مجموع مبلغ فروش پس از کسر سهم این خرید از کارمزد فروش':''}
   const fullySold=remainingKnown&&sh>0&&remaining===0&&state.soldShares>=sh,editing=tr.dataset.purchaseEditMode==='true',locked=fullySold&&!editing;
   const gain=fullySold&&cost>0?state.realizedGain:null,profit=gain===null||!cost?null:gain/cost,pe=tr.querySelector(".profit"),amount=tr.querySelector(".gain-amount");
   pe.textContent=profit===null?"":fmtPct(profit);amount.textContent=gain===null?"":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
