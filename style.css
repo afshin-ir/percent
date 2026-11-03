@@ -13,7 +13,6 @@ header{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:
 .card strong,.overview-card strong{font-size:19px}
 .settings-grid{gap:12px}
 .settings-grid label{min-width:190px;text-align:center;align-items:center}
-.symbol-share{font-size:11px;font-weight:700;white-space:nowrap}
 .symbol-allocation-card{margin-bottom:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:88px}
 .symbol-allocation-card strong{font-size:22px;margin-top:6px}
 .symbol-allocation-card small{display:block;color:#7b828a;font-size:10px;margin-top:4px}
