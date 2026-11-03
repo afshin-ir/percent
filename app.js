@@ -49,7 +49,7 @@ function toggleBuySalesEditor(buyRow){
 
 function updateBuySalesButton(tr){
  const buyId=tr.dataset.id,total=(active().sales||[]).filter(saleIsComplete).reduce((n,s)=>n+(s.allocations||[]).filter(a=>a.buyId===buyId).reduce((x,a)=>x+(Number(a.shares)||0),0),0);
- const button=tr.querySelector('.buy-sales-btn');if(button)button.textContent=total?('فروش‌های این خرید · '+fmt(total)+' سهم'):'＋ فروش برای این خرید';
+ const button=tr.querySelector('.buy-sales-btn');if(button){button.textContent=total?('فروش‌ها · '+fmt(total)+' سهم'):'＋ ثبت فروش';button.title='دیدن یا ثبت فروش برای همین خرید'}
 }
 
 function addRow(data={date:"",shares:"",price:"",commission:""}){
