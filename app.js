@@ -27,7 +27,12 @@ function addRow(data={date:"",shares:"",price:"",commission:""}){
  tr.querySelector(".delete").onclick=()=>{const date=tr.querySelector(".jalali").value||"بدون تاریخ",sh=tr.querySelector(".shares").value||"بدون تعداد";if(!confirm(`این خرید حذف شود؟\n\nتاریخ: ${date}\nتعداد سهم: ${sh}`))return;tr.remove();syncRows();render();saveApp()};
  setDataFieldTabOrder()
 }
-function syncSellCommissionRow(tr,save=true){const row=active().rows.find(r=>r.id===tr.dataset.id);if(!row)return;const raw=tr.querySelector(".sell-commission").value.trim(),state=allocationLedger(active()),remaining=state.complete?(state.remainingByBuy.get(row.id)||0):0;if(!raw){row.sellCommission=null;row.sellCommissionPrice=null;row.sellCommissionShares=null}else{row.sellCommission=num(raw);const price=Number(active().price)||0;row.sellCommissionPrice=remaining>0&&price>0?price:null;row.sellCommissionShares=remaining>0&&price>0?remaining:null}if(save)saveApp()}
+function buyRemainingState(symbol,row,allocation=allocationLedger(symbol)){
+ const unresolved=(symbol.sales||[]).some(sale=>{if(!parseJ(sale.date)||!parseJ(row.date)||faToEn(sale.date)<faToEn(row.date))return false;const assigned=(sale.allocations||[]).reduce((n,a)=>n+(Number(a.shares)||0),0);return !saleIsComplete(sale)||assigned<Number(sale.shares)});
+ const blocked=allocation.blockedSale&&row.date&&faToEn(allocation.blockedSale.date||'')>=faToEn(row.date);
+ return{remaining:allocation.remainingByBuy.has(row.id)?allocation.remainingByBuy.get(row.id):(Number(row.shares)||0),known:!unresolved&&!blocked}
+}
+function syncSellCommissionRow(tr,save=true){const symbol=active(),row=symbol.rows.find(r=>r.id===tr.dataset.id);if(!row)return;const raw=tr.querySelector(".sell-commission").value.trim(),state=buyRemainingState(symbol,row);if(!raw){row.sellCommission=null;row.sellCommissionPrice=null;row.sellCommissionShares=null}else{row.sellCommission=num(raw);const price=Number(symbol.price)||0,rowState=state.remaining>0&&state.known&&price>0;row.sellCommissionPrice=rowState?price:null;row.sellCommissionShares=rowState?state.remaining:null}if(save)saveApp()}
 function setDataFieldTabOrder(){
   // Tab is reserved for editable numeric data-entry fields only.
   // Keep the order dynamic so newly added purchase rows are included.
@@ -45,9 +50,7 @@ function updateTableOnly(){
  const s=active(),price=Number(s.price)||0,allocation=allocationLedger(s);let ts=0,tc=0;
  rowsEl.querySelectorAll("tr:not(.sale-tr)").forEach(tr=>{
   const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c,row=s.rows.find(r=>r.id===tr.dataset.id),state=allocation.byBuy[row?.id]||{unitCost:sh?(cost/sh):0,soldShares:0,realizedGain:0,realizedBasis:0};
-  const unresolvedAfter=row?.date?(s.sales||[]).some(sale=>{if(!parseJ(sale.date)||faToEn(sale.date)<faToEn(row.date))return false;const assigned=(sale.allocations||[]).reduce((n,a)=>n+(Number(a.shares)||0),0);return !saleIsComplete(sale)||assigned<Number(sale.shares)}):true;
-  const blockedAfter=allocation.blockedSale&&row?.date&&faToEn(allocation.blockedSale.date||'')>=faToEn(row.date);
-  const remaining=allocation.remainingByBuy.has(row?.id)?allocation.remainingByBuy.get(row.id):sh,remainingKnown=!unresolvedAfter&&!blockedAfter;
+  const remainingInfo=row?buyRemainingState(s,row,allocation):{remaining:sh,known:false},remaining=remainingInfo.remaining,remainingKnown=remainingInfo.known;
   const fee=row?.sellCommission,feeEntered=fee!==null&&fee!==undefined,feeFresh=remainingKnown&&remaining>0&&feeEntered&&price>0&&Number(row.sellCommissionPrice)===price&&Number(row.sellCommissionShares)===remaining;
   tr.querySelector(".cost").textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);
   let gain=null;if(remainingKnown&&remaining===0&&state.soldShares>0)gain=state.realizedGain;else if(feeFresh&&cost>0)gain=state.realizedGain+remaining*price-Number(fee)-remaining*state.unitCost;
