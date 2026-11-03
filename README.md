@@ -92,7 +92,7 @@
 
 ### 💾 پشتیبان‌گیری و بازیابی
 <ul dir="rtl" align="right">
-<li dir="rtl" align="right">تهیهٔ پشتیبان کامل با قالب <code>JSON</code>؛ خروجی <code>CSV</code> برای جدول خریدهاست.</li>
+<li dir="rtl" align="right">تهیهٔ پشتیبان کامل با قالب <code>JSON</code> با نامی مانند <code>bourse-1405-08-12.json</code>؛ خروجی <code>CSV</code> برای جدول خریدهاست.</li>
 <li dir="rtl" align="right">بازیابی اطلاعات از فایل‌های پشتیبان برنامه.</li>
 <li dir="rtl" align="right">نگهداری داده‌ها در حافظۀ محلی مرورگر (<code>localStorage</code>).</li>
 <li dir="rtl" align="right">امکان پاک‌کردن همۀ داده‌ها با تأیید کاربر.</li>
