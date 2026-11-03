@@ -678,13 +678,13 @@ let allocationTargetId=null;
 function closeSaleAllocation(){const modal=$('#saleAllocationModal');modal.classList.remove('open');modal.setAttribute('aria-hidden','true');allocationTargetId=null}
 function updateAllocationForm(sale){
  const body=$('#allocationRows'),status=$('#allocationStatus'),save=$('#saveAllocation'),inputs=[...body.querySelectorAll('.allocation-qty')],sum=inputs.reduce((n,i)=>n+(Number(i.value)||0),0),valid=inputs.every(i=>Number.isInteger(Number(i.value||0))&&Number(i.value||0)>=0&&Number(i.value||0)<=Number(i.max));
- status.textContent='تخصیص ثبت‌شده: '+fmt(sum)+' از '+fmt(sale.shares)+' سهم';save.disabled=!valid||sum!==Number(sale.shares);
+ status.textContent='جمع سهم‌های واردشده: '+fmt(sum)+' از '+fmt(sale.shares)+' سهم؛ باید برابر شود.';save.disabled=!valid||sum!==Number(sale.shares);
 }
 function openSaleAllocation(saleId){
  const symbol=active(),sale=(symbol.sales||[]).find(s=>s.id===saleId);if(!sale)return;
  allocationTargetId=saleId;const modal=$('#saleAllocationModal'),body=$('#allocationRows'),title=$('#allocationTitle'),intro=$('#allocationIntro'),status=$('#allocationStatus'),save=$('#saveAllocation'),clear=$('#clearAllocation');
- title.textContent='تخصیص فروش به پله‌های خرید';body.innerHTML='';save.disabled=true;clear.hidden=!(sale.allocations||[]).length;
- intro.textContent='فروش '+(sale.date?enToFa(sale.date):'بدون تاریخ')+'، '+fmt(sale.shares)+' سهم. تعداد سهم فروخته‌شده از هر خرید را وارد کن؛ جمع باید دقیقاً برابر تعداد این فروش باشد. بعد «ذخیرۀ تخصیص» را بزن. کارمزد واقعی فروش به نسبت سهم‌ها میان خریدها تقسیم می‌شود.';
+ title.textContent='انتخاب خرید برای این فروش';body.innerHTML='';save.disabled=true;clear.hidden=!(sale.allocations||[]).length;
+ intro.textContent='برای فروش '+(sale.date?enToFa(sale.date):'بدون تاریخ')+'، '+fmt(sale.shares)+' سهم: در کادر «سهم فروخته‌شده از این خرید» مقدار هر خرید را وارد کن؛ جمع باید '+fmt(sale.shares)+' شود. این کادر داخل همین پنجره است. عدد فیلد «تعداد سهم» در جدول اصلی، تعداد خرید است و لازم نیست تغییرش بدهی. کارمزد واقعی فروش متناسب با سهم‌ها میان خریدهای انتخاب‌شده تقسیم می‌شود.';
  if(!saleIsComplete(sale))status.textContent='برای تخصیص، تاریخ، تعداد، قیمت و کارمزد فروش را کامل کن.';
  else{
   const plan=allocationCapacitiesBefore(symbol,sale);
@@ -696,7 +696,7 @@ function openSaleAllocation(saleId){
     const available=plan.remaining.get(b.id)||0;if(available<=0)return;
     const tr=document.createElement('tr'),desc=document.createElement('td'),left=document.createElement('td'),field=document.createElement('td'),input=document.createElement('input');
     desc.textContent=enToFa(b.date)+' · '+fmt(b.shares)+' سهم × '+fmt(b.price)+' ریال';left.textContent=fmt(available);
-    input.type='number';input.min='0';input.max=String(available);input.step='1';input.value=String(already.get(b.id)||0);input.className='allocation-qty';input.dataset.buyId=b.id;input.setAttribute('aria-label','تعداد تخصیص از خرید '+enToFa(b.date));field.appendChild(input);tr.append(desc,left,field);body.appendChild(tr);
+    input.type='number';input.min='0';input.max=String(available);input.step='1';input.value=already.has(b.id)?String(already.get(b.id)):'';input.className='allocation-qty';input.dataset.buyId=b.id;input.setAttribute('aria-label','سهم فروخته‌شده از خرید مورخ '+enToFa(b.date));field.appendChild(input);tr.append(desc,left,field);body.appendChild(tr);
     input.oninput=()=>updateAllocationForm(sale);
    });
    if(!body.children.length)status.textContent='برای این فروش، پلهٔ خریدِ قابل تخصیصی پیدا نشد.';
