@@ -158,7 +158,7 @@ setChartPeriod(app.ui?.chartPeriod||6);
 function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".jalali").value),now=currentJalali();calendarCursor=p?{y:p.y,m:p.m}:{y:now.y,m:now.m};renderCalendar();$("#dateModal").classList.add("open");$("#dateModal").setAttribute("aria-hidden","false")}function closeCalendar(){$("#dateModal").classList.remove("open");$("#dateModal").setAttribute("aria-hidden","true");calendarTarget=null}function monthDays(y,m){return m<=6?31:m<=11?30:(jalaliToGregorian(y+1,1,1).date-jalaliToGregorian(y,12,1).date)/86400000}function renderCalendar(){const{y,m}=calendarCursor;$("#calendarTitle").textContent=`${["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"][m-1]} ${enToFa(y)}`;const first=jalaliToGregorian(y,m,1).date.getUTCDay(),offset=(first+1)%7,days=monthDays(y,m),selected=parseJ(calendarTarget?.querySelector(".jalali")?.value||""),today=currentJalali(),g=$("#calendarGrid");g.innerHTML="";for(let i=0;i<offset;i++){const e=document.createElement("button");e.className="empty";g.appendChild(e)}for(let d=1;d<=days;d++){const b=document.createElement("button");b.textContent=enToFa(d);if(today.y===y&&today.m===m&&today.d===d)b.classList.add("today");if(selected?.y===y&&selected?.m===m&&selected?.d===d)b.classList.add("selected");b.onclick=()=>selectDate(y,m,d);g.appendChild(b)}}function selectDate(y,m,d){if(!calendarTarget)return;calendarTarget.querySelector(".jalali").value=`${enToFa(y)}/${enToFa(String(m).padStart(2,"0"))}/${enToFa(String(d).padStart(2,"0"))}`;if(calendarTarget.classList.contains("sale-tr"))syncSaleRow(calendarTarget);else syncRows();closeCalendar();render();saveApp()}$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};$("#choiceModal").onclick=e=>{if(e.target.id==="choiceModal")closeChoice()};window.addEventListener("resize",drawChart);renderSymbols();render();saveApp();
 // Dashboard patch
 const OVERVIEW_STATE_KEY = "overview";
-let overviewMode = !!app.ui?.overview;
+let overviewMode = !Object.keys(app.symbols).length || !!app.ui?.overview;
 const mainRoot = document.querySelector("main");
 const symbolViewSelectors = [".hero-row", ".cards", ".settings", ".chart-panel", "main > .panel"];
 
@@ -313,7 +313,7 @@ function bindOverviewTooltips(root){
     allocation.querySelectorAll(".overview-donut-segment").forEach(segment=>{segment.addEventListener("pointerenter",e=>show(segment,e));segment.addEventListener("pointermove",e=>position(allocation,tooltip,e));segment.addEventListener("pointerleave",()=>tooltip.hidden=true);segment.addEventListener("focus",()=>show(segment));segment.addEventListener("blur",()=>tooltip.hidden=true)});
   }
 }
-function renderOverview(){const salesPanel=document.querySelector("#salesPanel");if(salesPanel)salesPanel.style.display="none";
+function renderOverview(){const symbolNav=document.querySelector("#symbolList");if(symbolNav)symbolNav.style.display="none";const salesPanel=document.querySelector("#salesPanel");if(salesPanel)salesPanel.style.display="none";
   const d=portfolioData();
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.style.display="none"));
   let el=document.querySelector("#overviewView");
@@ -492,6 +492,7 @@ function renderOverview(){const salesPanel=document.querySelector("#salesPanel")
 }
 function renderSymbolView(){
   const el=document.querySelector("#overviewView"); if(el)el.style.display="none";
+  const symbolNav=document.querySelector("#symbolList");if(symbolNav)symbolNav.style.display="flex";
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(node=>node.style.display=""));
   sortRows();
   const s=active();
@@ -514,6 +515,7 @@ function renderSymbolView(){
 }
 function renderSymbolsDashboardAware(){
   const el=$("#symbolList");el.innerHTML="";
+  const heading=document.createElement("div");heading.className="sidebar-head";heading.innerHTML="<h2>نمادها</h2>";el.appendChild(heading);
   const overview=document.createElement("button");
   overview.className="symbol-btn overview-btn"+(overviewMode?" active":"");
   overview.innerHTML='<span class="overview-icon">▦</span><span class="symbol-name">نمای کلی</span>';
