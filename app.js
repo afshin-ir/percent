@@ -606,7 +606,7 @@ function saleRow(sale){
  for(const selector of ['.shares','.price','.commission']){
   const input=tr.querySelector(selector);
   input.oninput=()=>{syncSaleRow(tr,false)};
-  input.onblur=()=>{if(!syncSaleRow(tr,true))return;input.value=formatThousands(input.value);updateSaleRowDisplay(tr);renderSymbols();applyTradeFilter()};
+  input.onblur=()=>{if(!syncSaleRow(tr,true))return;input.value=formatThousands(input.value);render();renderSymbols()};
  }
  const actionCell=tr.querySelector('.delete').parentElement,allocate=document.createElement('button');allocate.type='button';allocate.className='allocation-btn';allocate.textContent='اختصاص خرید';allocate.title='تخصیص تعداد فروخته‌شده به یک یا چند پلهٔ خرید';allocate.onclick=()=>openSaleAllocation(sale.id);actionCell.insertBefore(allocate,tr.querySelector('.delete'));
  const del=tr.querySelector('.delete');del.title='حذف فروش';del.onclick=()=>{if(!confirm('این فروش حذف شود؟'))return;active().sales=active().sales.filter(x=>x.id!==sale.id);render();renderSymbols();saveApp()};
