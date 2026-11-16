@@ -562,3 +562,7 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 .break-even-value{color:#16803c;font-size:10px;font-weight:700}
 #rows>tr:not(.buy-sales-editor-row)>td:first-child .jalali{width:104px!important}
 #rows>tr:not(.buy-sales-editor-row)>td:nth-child(2) .shares{width:68px!important}
+
+.trade-history-table th:nth-child(5),.trade-history-table th:nth-child(6){width:104px;max-width:104px;white-space:normal;line-height:1.25}
+.trade-history-table td:nth-child(5),.trade-history-table td:nth-child(6){width:104px;max-width:104px}
+.trade-history-table td:nth-child(5) input,.trade-history-table td:nth-child(6) input{box-sizing:border-box;width:88px!important;min-width:0;padding-inline:4px;font-size:12px}
