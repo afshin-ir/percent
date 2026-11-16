@@ -21,7 +21,7 @@ function toggleBuySalesEditor(buyRow){
  closeBuySalesEditor();
  const symbol=active(),buy=(symbol.rows||[]).find(r=>r.id===buyId);if(!buy)return;
  const detail=document.createElement('tr');detail.className='buy-sales-editor-row';detail.dataset.buyId=buyId;
- const cell=document.createElement('td');cell.colSpan=11;detail.appendChild(cell);
+ const cell=document.createElement('td');cell.colSpan=10;detail.appendChild(cell);
  const panel=document.createElement('div');panel.className='buy-sales-inline';
  const heading=document.createElement('strong');heading.textContent='فروش‌های این خرید · ' +(buy.date?enToFa(buy.date):'بدون تاریخ')+' · '+fmt(buy.shares)+' سهم';
  const intro=document.createElement('p');intro.className='muted';intro.textContent='تاریخ، تعداد، قیمت و کارمزد هر فروش را اینجا وارد کن. یک خرید می‌تواند چند فروش داشته باشد.';
@@ -111,7 +111,7 @@ function updateTableOnly(){
   const remainingInfo=row?buyRemainingState(s,row,allocation):{remaining:sh,known:false},remaining=remainingInfo.remaining,remainingKnown=remainingInfo.known;
   const costCell=tr.querySelector(".cost");if(costCell)costCell.textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);
   const breakEven=tr.querySelector('.break-even-summary'),sellPriceInput=tr.querySelector('.sell-price'),sellFeeInput=tr.querySelector('.sell-commission'),hasReferenceSell=!!sellPriceInput?.value.trim()&&!!sellFeeInput?.value.trim(),referenceSellPrice=num(sellPriceInput?.value),referenceSellFee=num(sellFeeInput?.value),sellFeeRate=hasReferenceSell&&referenceSellPrice>0&&sh>0?referenceSellFee/(referenceSellPrice*sh):null,breakEvenPrice=sh>0&&p>0&&c>=0&&sellFeeRate!==null&&sellFeeRate>=0&&sellFeeRate<1?Math.ceil((p+c/sh)/(1-sellFeeRate)):null;
-  if(breakEven){breakEven.textContent=breakEvenPrice!==null?fmt(breakEvenPrice):'—';breakEven.title=breakEvenPrice!==null?'با نرخ کارمزد واردشده برای قیمت و تعداد مبنا':'قیمت فروش و کارمزد همان تعداد سهم را وارد کن'}
+  if(breakEven){breakEven.textContent='سربه‌سر: '+(breakEvenPrice!==null?fmt(breakEvenPrice):'—')+' ریال';breakEven.title=breakEvenPrice!==null?'با نرخ کارمزد واردشده برای قیمت و تعداد مبنا':'قیمت فروش و کارمزد همان تعداد سهم را وارد کن'}
   const fullySold=remainingKnown&&sh>0&&remaining===0&&state.soldShares>=sh,editing=tr.dataset.purchaseEditMode==='true',locked=fullySold&&!editing;
   const gain=fullySold&&cost>0?state.realizedGain:null,profit=gain===null||!cost?null:gain/cost,pe=tr.querySelector(".profit"),amount=tr.querySelector(".gain-amount");
   pe.textContent=profit===null?"":fmtPct(profit);amount.textContent=gain===null?"":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
