@@ -563,8 +563,6 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 #rows>tr:not(.buy-sales-editor-row)>td:first-child .jalali{width:104px!important}
 #rows>tr:not(.buy-sales-editor-row)>td:nth-child(2) .shares{width:68px!important}
 
-.trade-history-table th:nth-child(5){width:112px;max-width:112px;white-space:normal;line-height:1.25}
-.trade-history-table td:nth-child(5){width:112px;max-width:112px}
-.trade-history-table td:nth-child(5) input{box-sizing:border-box;width:94px!important;min-width:0;padding-inline:4px;font-size:12px}
-.sale-scenario-stack{display:flex;flex-direction:column;align-items:center;gap:4px}
-.sale-scenario-stack .sell-commission{font-size:11px;padding:6px 3px}
+.trade-history-table th:nth-child(4),.trade-history-table td:nth-child(4){width:118px;max-width:118px;white-space:normal;line-height:1.25}
+.fee-input-stack{display:flex;flex-direction:column;align-items:center;gap:4px}
+.fee-input-stack input{box-sizing:border-box;width:100px!important;min-width:0;padding-inline:4px;font-size:11px}
