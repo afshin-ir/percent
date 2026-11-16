@@ -557,4 +557,8 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 .sell-commission-cell{min-width:160px}
 
 .purchase-price-cell{min-width:140px}
-.break-even-summary{display:block;margin-top:3px;color:#61758b;font-size:11px;font-weight:500;line-height:1.4;white-space:nowrap}
+.purchase-price-stack{display:flex;flex-direction:column;align-items:center;gap:3px}
+.break-even-summary{display:block;color:#61758b;font-size:10px;font-weight:500;line-height:1.35;white-space:nowrap}
+.break-even-value{color:#16803c;font-size:10px;font-weight:700}
+#rows>tr:not(.buy-sales-editor-row)>td:first-child .jalali{width:104px!important}
+#rows>tr:not(.buy-sales-editor-row)>td:nth-child(2) .shares{width:68px!important}
