@@ -21,7 +21,7 @@ function toggleBuySalesEditor(buyRow){
  closeBuySalesEditor();
  const symbol=active(),buy=(symbol.rows||[]).find(r=>r.id===buyId);if(!buy)return;
  const detail=document.createElement('tr');detail.className='buy-sales-editor-row';detail.dataset.buyId=buyId;
- const cell=document.createElement('td');cell.colSpan=9;detail.appendChild(cell);
+ const cell=document.createElement('td');cell.colSpan=8;detail.appendChild(cell);
  const panel=document.createElement('div');panel.className='buy-sales-inline';
  const heading=document.createElement('strong');heading.textContent='فروش‌های این خرید · ' +(buy.date?enToFa(buy.date):'بدون تاریخ')+' · '+fmt(buy.shares)+' سهم';
  const intro=document.createElement('p');intro.className='muted';intro.textContent='تاریخ، تعداد، قیمت و کارمزد هر فروش را اینجا وارد کن. یک خرید می‌تواند چند فروش داشته باشد.';
@@ -65,13 +65,13 @@ function togglePurchaseEdit(tr){
  if(!editing)tr.querySelector('.shares')?.focus();
 }
 
-function addRow(data={date:"",shares:"",price:"",commission:"",sellPrice:"",sellCommission:""}){
- const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||id();tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?formatThousands(data.shares):"";tr.querySelector(".price").value=data.price?formatThousands(data.price):"";tr.querySelector(".commission").value=data.commission?formatThousands(data.commission):"";tr.querySelector(".sell-price").value=data.sellPrice?formatThousands(data.sellPrice):"";tr.querySelector(".sell-commission").value=data.sellCommission?formatThousands(data.sellCommission):"";
+function addRow(data={date:"",shares:"",price:"",commission:"",sellCommission:""}){
+ const tr=$("#rowTemplate").content.firstElementChild.cloneNode(true);tr.dataset.id=data.id||id();tr.querySelector(".jalali").value=data.date?enToFa(data.date):"";tr.querySelector(".shares").value=data.shares?formatThousands(data.shares):"";tr.querySelector(".price").value=data.price?formatThousands(data.price):"";tr.querySelector(".commission").value=data.commission?formatThousands(data.commission):"";tr.querySelector(".sell-commission").value=data.sellCommission?formatThousands(data.sellCommission):"";
  rowsEl.appendChild(tr);
  const actionCell=tr.querySelector('.delete').parentElement,buySales=document.createElement('button');buySales.type='button';buySales.className='allocation-btn buy-sales-btn';buySales.textContent='فروش‌های این خرید';buySales.title='ثبت یا دیدن فروش‌هایی که از این خرید انجام شده‌اند';buySales.onclick=()=>toggleBuySalesEditor(tr);actionCell.insertBefore(buySales,tr.querySelector('.delete'));
  const purchaseEdit=document.createElement('button');purchaseEdit.type='button';purchaseEdit.className='allocation-btn purchase-edit-btn';purchaseEdit.hidden=true;purchaseEdit.onclick=()=>togglePurchaseEdit(tr);actionCell.insertBefore(purchaseEdit,tr.querySelector('.delete'));
  tr.querySelector(".date-input").onclick=()=>openCalendar(tr);tr.querySelector(".date-input").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(tr)}};
- [".shares",".price",".commission",".sell-price",".sell-commission"].forEach(sel=>{const input=tr.querySelector(sel);input.oninput=()=>{syncRows();updateTableOnly()};input.onblur=()=>{input.value=formatThousands(input.value);syncRows();updateTableOnly();saveApp()}});
+ [".shares",".price",".commission",".sell-commission"].forEach(sel=>{const input=tr.querySelector(sel);input.oninput=()=>{syncRows();updateTableOnly()};input.onblur=()=>{input.value=formatThousands(input.value);syncRows();updateTableOnly();saveApp()}});
  tr.querySelector(".delete").onclick=()=>{const date=tr.querySelector(".jalali").value||"بدون تاریخ",sh=tr.querySelector(".shares").value||"بدون تعداد";if(!confirm(`این خرید حذف شود؟\n\nتاریخ: ${date}\nتعداد سهم: ${sh}`))return;tr.remove();syncRows();render();saveApp()};
  setDataFieldTabOrder()
 }
@@ -91,7 +91,7 @@ function setDataFieldTabOrder(){
   fields.forEach(el=>{el.tabIndex=0});
 }
 
-function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row)")].map(tr=>{const old=active().rows.find(r=>r.id===tr.dataset.id)||{};return{id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value),sellPrice:num(tr.querySelector(".sell-price").value),sellCommission:num(tr.querySelector(".sell-commission").value)}});sortRows()}
+function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row)")].map(tr=>{const old=active().rows.find(r=>r.id===tr.dataset.id)||{};return{id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value),sellCommission:num(tr.querySelector(".sell-commission").value)}});sortRows()}
 
 function buySalesSummary(symbol,buyId,allocation=allocationLedger(symbol)){
  let shares=0,gross=0,commission=0;
@@ -110,8 +110,8 @@ function updateTableOnly(){
   const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),c=num(tr.querySelector(".commission").value),cost=sh*p+c,row=s.rows.find(r=>r.id===tr.dataset.id),state=allocation.byBuy[row?.id]||{unitCost:sh?(cost/sh):0,soldShares:0,realizedGain:0,realizedBasis:0};
   const remainingInfo=row?buyRemainingState(s,row,allocation):{remaining:sh,known:false},remaining=remainingInfo.remaining,remainingKnown=remainingInfo.known;
   const costCell=tr.querySelector(".cost");if(costCell)costCell.textContent=fmt(cost);const d=daysBetweenJalali(tr.querySelector(".jalali").value);tr.querySelector(".days").textContent=d===null?"—":enToFa(d);
-  const breakEven=tr.querySelector('.break-even-summary'),sellPriceInput=tr.querySelector('.sell-price'),sellFeeInput=tr.querySelector('.sell-commission'),hasReferenceSell=!!sellPriceInput?.value.trim()&&!!sellFeeInput?.value.trim(),referenceSellPrice=num(sellPriceInput?.value),referenceSellFee=num(sellFeeInput?.value),sellFeeRate=hasReferenceSell&&referenceSellPrice>0&&sh>0?referenceSellFee/(referenceSellPrice*sh):null,breakEvenPrice=sh>0&&p>0&&c>=0&&sellFeeRate!==null&&sellFeeRate>=0&&sellFeeRate<1?Math.ceil((p+c/sh)/(1-sellFeeRate)):null;
-  if(breakEven){const value=breakEven.querySelector('.break-even-value');if(value)value.textContent=breakEvenPrice!==null?fmt(breakEvenPrice):'—';breakEven.title=breakEvenPrice!==null?'با نرخ کارمزد واردشده برای قیمت و تعداد مبنا':'قیمت فروش و کارمزد همان تعداد سهم را وارد کن'}
+  const breakEven=tr.querySelector('.break-even-summary'),sellFeeInput=tr.querySelector('.sell-commission'),hasReferenceSell=!!sellFeeInput?.value.trim(),referenceSellFee=num(sellFeeInput?.value),sellFeeRate=hasReferenceSell&&p>0&&sh>0?referenceSellFee/(p*sh):null,breakEvenPrice=sh>0&&p>0&&c>=0&&sellFeeRate!==null&&sellFeeRate>=0&&sellFeeRate<1?Math.ceil((p+c/sh)/(1-sellFeeRate)):null;
+  if(breakEven){const value=breakEven.querySelector('.break-even-value');if(value)value.textContent=breakEvenPrice!==null?fmt(breakEvenPrice):'—';breakEven.title=breakEvenPrice!==null?'با نرخ کارمزد واردشده برای همین تعداد در قیمت خرید':'کارمزد فروشِ همین تعداد سهم را وارد کن'}
   const fullySold=remainingKnown&&sh>0&&remaining===0&&state.soldShares>=sh,editing=tr.dataset.purchaseEditMode==='true',locked=fullySold&&!editing;
   const gain=fullySold&&cost>0?state.realizedGain:null,profit=gain===null||!cost?null:gain/cost,pe=tr.querySelector(".profit"),amount=tr.querySelector(".gain-amount");
   pe.textContent=profit===null?"":fmtPct(profit);amount.textContent=gain===null?"":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
