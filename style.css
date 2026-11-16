@@ -566,3 +566,6 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 .trade-history-table th:nth-child(4),.trade-history-table td:nth-child(4){width:118px;max-width:118px;white-space:normal;line-height:1.25}
 .fee-input-stack{display:flex;flex-direction:column;align-items:center;gap:4px}
 .fee-input-stack input{box-sizing:border-box;width:100px!important;min-width:0;padding-inline:4px;font-size:11px}
+
+.fee-field-label{display:block;color:#64748b;font-size:10px;font-weight:500;line-height:1.2;white-space:nowrap}
+.fee-input-stack{gap:2px}
