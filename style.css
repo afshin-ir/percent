@@ -555,3 +555,6 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 .trade-guide-note.profit-guide{color:#5f6f80;margin-top:2px}
 
 .sell-commission-cell{min-width:160px}
+
+.purchase-price-cell{min-width:140px}
+.break-even-summary{display:block;margin-top:3px;color:#61758b;font-size:11px;font-weight:500;line-height:1.4;white-space:nowrap}
