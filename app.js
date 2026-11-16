@@ -21,7 +21,7 @@ function toggleBuySalesEditor(buyRow){
  closeBuySalesEditor();
  const symbol=active(),buy=(symbol.rows||[]).find(r=>r.id===buyId);if(!buy)return;
  const detail=document.createElement('tr');detail.className='buy-sales-editor-row';detail.dataset.buyId=buyId;
- const cell=document.createElement('td');cell.colSpan=8;detail.appendChild(cell);
+ const cell=document.createElement('td');cell.colSpan=7;detail.appendChild(cell);
  const panel=document.createElement('div');panel.className='buy-sales-inline';
  const heading=document.createElement('strong');heading.textContent='فروش‌های این خرید · ' +(buy.date?enToFa(buy.date):'بدون تاریخ')+' · '+fmt(buy.shares)+' سهم';
  const intro=document.createElement('p');intro.className='muted';intro.textContent='تاریخ، تعداد، قیمت و کارمزد هر فروش را اینجا وارد کن. یک خرید می‌تواند چند فروش داشته باشد.';
@@ -114,7 +114,7 @@ function updateTableOnly(){
   if(breakEven){const value=breakEven.querySelector('.break-even-value');if(value)value.textContent=breakEvenPrice!==null?fmt(breakEvenPrice):'—';breakEven.title=breakEvenPrice!==null?'با نرخ کارمزد واردشده برای همین تعداد در قیمت خرید':'کارمزد فروشِ همین تعداد سهم را وارد کن'}
   const fullySold=remainingKnown&&sh>0&&remaining===0&&state.soldShares>=sh,editing=tr.dataset.purchaseEditMode==='true',locked=fullySold&&!editing;
   const gain=fullySold&&cost>0?state.realizedGain:null,profit=gain===null||!cost?null:gain/cost,pe=tr.querySelector(".profit"),amount=tr.querySelector(".gain-amount");
-  pe.textContent=profit===null?"":fmtPct(profit);amount.textContent=gain===null?"":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
+  pe.textContent=profit===null?"":"("+fmtPct(profit)+")";amount.textContent=gain===null?"":(gain>0?"+":"")+fmt(gain);pe.classList.toggle("positive",profit>0);pe.classList.toggle("negative",profit<0);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0);
   tr.classList.toggle('purchase-row-locked',locked);tr.classList.toggle('purchase-row-editing',editing);
   ['.jalali','.shares','.price','.commission'].forEach(selector=>{const input=tr.querySelector(selector);if(!input)return;input.disabled=locked;input.title=locked?'این خرید کامل فروخته شده است؛ برای اصلاح، «اصلاح خرید» را بزن.':''});
   const editButton=tr.querySelector('.purchase-edit-btn');if(editButton){editButton.hidden=!fullySold&&!editing;editButton.textContent=editing?'پایان اصلاح':'اصلاح خرید';editButton.title=editing?'پایان اصلاح اطلاعات خرید':'بازکردن فیلدهای این خرید برای اصلاح'}
