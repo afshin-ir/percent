@@ -200,7 +200,7 @@ function updateTableOnly(){
   if(amount){amount.textContent=gain===null?"—":(gain>0?"+":"")+fmt(gain);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0)}
   tr.classList.toggle("purchase-row-locked",locked);tr.classList.toggle("purchase-row-fully-sold",fullySold);
   [".jalali",".shares",".price",".commission",".sell-commission"].forEach(selector=>{const input=tr.querySelector(selector);if(!input)return;input.disabled=locked;input.title=locked?"این خرید کاملاً فروخته شده است.":""});
-  updateBuySalesButton(tr);const saleEditor=rowsEl.querySelector('.buy-sales-editor-row[data-buy-id="'+(row?.id||"")+'"]'),addSaleButton=saleEditor?.querySelector(".buy-sales-add"),noRemaining=remainingKnown&&sh>0&&remaining===0;if(addSaleButton){addSaleButton.disabled=noRemaining;addSaleButton.textContent=noRemaining?"تمام سهم‌ها فروخته شده":"＋ افزودن فروش"}ts+=sh;tc+=cost
+  updateBuySalesButton(tr);const saleEditor=rowsEl.querySelector('.buy-sales-editor-row[data-buy-id="'+(row?.id||"")+'"]'),addSaleButton=saleEditor?.querySelector(".buy-sales-add"),noRemaining=remainingKnown&&sh>0&&remaining===0;if(addSaleButton){addSaleButton.disabled=noRemaining;addSaleButton.textContent=noRemaining?"تمام سهم‌ها فروخته شده":"＋ فروش بعدی"}ts+=sh;tc+=cost
  });
  const realizedTotal=Object.values(allocation.bySale||{}).reduce((sum,sale)=>sum+(Number(sale.gain)||0),0),realizedTotalEl=$("#realizedProfitTotal");
  if(realizedTotalEl){realizedTotalEl.textContent=fmt(realizedTotal);realizedTotalEl.classList.toggle("positive",realizedTotal>0);realizedTotalEl.classList.toggle("negative",realizedTotal<0)}
