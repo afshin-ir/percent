@@ -739,3 +739,19 @@ body.privacy-mode #symbolList .symbol-tab-result{filter:blur(8px);user-select:no
   text-shadow:0 1px 1px rgba(16,45,70,.2);
 }
 .trade-history-table thead th+th{border-inline-start:1px solid rgba(255,255,255,.22)}
+
+/* پهنای تاریخ و تعداد با ستون قیمت سهم هماهنگ است */
+.trade-history-table thead th:nth-child(1),
+.trade-history-table thead th:nth-child(2),
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:nth-child(1),
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:nth-child(2){
+  width:150px;
+  max-width:150px;
+}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:nth-child(1) .jalali,
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:nth-child(2) .shares,
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:nth-child(3) .price{
+  box-sizing:border-box;
+  width:125px!important;
+  min-width:0;
+}
