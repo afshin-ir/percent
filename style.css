@@ -589,3 +589,8 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 .realized-profit-summary{margin:7px 0 0;color:#64748b;font-size:12px}
 .realized-profit-summary strong{font-size:14px;font-weight:700}
 .realized-profit-cell{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+
+/* Table for symbol and realized sales only. */
+.overview-table{width:100%;min-width:0;max-width:900px;margin-inline:auto;table-layout:fixed}
+.overview-symbol-cell{width:50%;min-width:0;max-width:none}
+.overview-table td.overview-symbol-cell{width:50%}
