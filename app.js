@@ -50,7 +50,7 @@ function toggleBuySalesEditor(buyRow){
   if(left<=0){alert('تمام سهم‌های این خرید قبلاً فروخته شده‌اند.');return}
   const sale={id:id(),sourceBuyId:buyId,date:'',shares:0,price:0,commission:null,allocations:[{buyId,shares:0}]};
   active().sales.push(sale);saveApp();
-  const row=saleRow(sale,buyId);row.querySelector('.shares').max=String(left);tbody.appendChild(row);empty.hidden=true;row.querySelector('.jalali').focus();
+  const row=saleRow(sale,buyId);row.querySelector('.shares').max=String(left);tbody.appendChild(row);empty.hidden=true;row.querySelector('.jalali').click();
  };
  add.onclick=addSaleDraft;
  empty.hidden=!!existing.length;
