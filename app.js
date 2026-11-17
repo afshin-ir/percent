@@ -608,18 +608,36 @@ function renderSymbolView(){
   $("#lastUpdated").textContent=`امروز: ${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;
   drawChart();
 }
+function symbolProfitBadge(symbol,realized){
+  const hasSales=(symbol.sales||[]).some(sale=>Number(sale.shares)>0);
+  const label=hasSales?(realized>0?"سود":realized<0?"زیان":"سود و زیان")+": "+dashboardNumber(Math.abs(realized))+" ریال":"فروشی ثبت نشده";
+  const tone=realized>0?"positive":realized<0?"negative":"";
+  return {label,tone};
+}
+function refreshSymbolProfitBadges(){
+  const realizedByName=new Map(portfolioData().items.map(item=>[item.name,item.realized]));
+  document.querySelectorAll("#symbolList .symbol-btn").forEach(button=>{
+    const symbol=app.symbols[button.dataset.symbol];
+    if(!symbol)return;
+    const result=symbolProfitBadge(symbol,realizedByName.get(button.dataset.symbol)||0);
+    const badge=button.querySelector(".symbol-tab-result");
+    if(badge){badge.textContent=result.label;badge.className="symbol-tab-result "+result.tone}
+    button.setAttribute("aria-label",button.dataset.symbol+" — "+result.label);
+  });
+}
 function renderSymbolsDashboardAware(){
   const el=$("#symbolList");el.innerHTML="";
   const heading=document.createElement("div");heading.className="sidebar-head";heading.innerHTML="<h2>نمادها</h2><button id='addSymbolFromList' type='button' class='icon-btn' title='نماد جدید' aria-label='افزودن نماد'>＋</button>";el.appendChild(heading);heading.querySelector("#addSymbolFromList").onclick=addNewSymbol;
   (app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{
     const s=app.symbols[name];if(!s)return;
     const b=document.createElement("button");b.className="symbol-btn"+(!overviewMode&&name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;
-    b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span>`;
+    b.innerHTML=`<span class="symbol-tab-head"><span class="symbol-name">${escapeHtml(name)}</span><span class="drag-handle" aria-hidden="true">⋮⋮</span></span><span class="symbol-tab-result"></span>`;
     b.onclick=()=>{overviewMode=false;app.ui=app.ui||{};app.ui.overview=false;switchSymbol(name)};
     b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbolsDashboardAware();saveApp()};el.appendChild(b);
   });
+  refreshSymbolProfitBadges();
 }
-function saveAppDashboardAware(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;app.ui.overview=overviewMode;localStorage.setItem(KEY,JSON.stringify(app))}
+function saveAppDashboardAware(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;app.ui.overview=overviewMode;refreshSymbolProfitBadges();localStorage.setItem(KEY,JSON.stringify(app))}
 function renderDashboardAware(){renderSymbolView()}
 // Replace the view/render entry points while preserving the existing symbol-page implementation.
 renderSymbols=renderSymbolsDashboardAware;
