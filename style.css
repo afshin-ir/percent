@@ -729,3 +729,13 @@ body.privacy-mode #symbolList .symbol-tab-result{filter:blur(8px);user-select:no
   .trade-history-table .realized-gain{min-width:78px;font-size:13px}
   .buy-sales-inline{padding:10px}
 }
+
+/* سربرگ‌های برجسته و دکمه‌مانند، بدون القای قابلیت کلیک */
+.trade-history-table thead th{
+  border:1px solid #2b638f;
+  border-radius:9px;
+  background:linear-gradient(180deg,#4d8dbd 0%,#2c6797 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 2px 4px rgba(28,67,101,.18);
+  text-shadow:0 1px 1px rgba(16,45,70,.2);
+}
+.trade-history-table thead th+th{border-inline-start:1px solid rgba(255,255,255,.22)}
