@@ -387,7 +387,7 @@ const overviewSortColumns=[
   {key:"totalShares",label:"تعداد",tip:"تعداد سهام باقی‌مانده پس از کسر فروش‌ها"},
   {key:"cost",label:"بهای خرید",tip:"بهای تمام‌شدۀ سهام باقی‌مانده، با احتساب کارمزد خرید"},
   {key:"value",label:"ارزش فعلی",tip:"تعداد سهام باقی‌مانده ضرب‌در قیمت پایانی ثبت‌شده"},
-  {key:"currentProfit",label:"سود و زیان فعلی",tip:"سود و زیان سهام باقی‌مانده بر مبنای میانگین بهای خرید، پس از کسر کارمزد فروش برآوردی؛ برای مقایسه با سود و زیان فعلی کارگزاری."}
+  {key:"realized",label:"سود و زیان فروش‌ها",tip:"جمع سود و زیان فروش‌های ثبت‌شده برای این نماد"}
 ];
 function overviewCompare(a,b,key){
   const x=a[key],y=b[key];
@@ -481,8 +481,8 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
     return `<th scope="col" aria-sort="${selected?(overviewSort.direction===1?"ascending":"descending"):"none"}"><button type="button" class="overview-sort-button ${selected?"is-active":""}" data-sort="${c.key}" title="${c.tip}؛ برای مرتب‌سازی کلیک کنید" aria-label="مرتب‌سازی بر اساس ${c.label}: ${c.tip}"><span>${c.label}</span><span class="overview-sort-indicator ${selected?"is-active":""}" aria-hidden="true">${symbol}</span></button></th>`;
   }).join("");
   const rows=orderedItems.map(x=>{
-    const currentProfitClass=x.currentProfit>0?"positive":x.currentProfit<0?"negative":"";
-    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-price-cell"><input class="overview-price-input" type="text" inputmode="numeric" autocomplete="off" value="${x.price?formatThousands(x.price):""}" aria-label="قیمت پایانی ${escapeHtml(x.name)}" placeholder="قیمت را وارد کنید"></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${currentProfitClass}">${overviewPerformanceMarkup(x.currentProfit,x.currentRet)}</td></tr>`;
+    const realizedProfitClass=x.realized>0?"positive":x.realized<0?"negative":"";
+    return `<tr class="overview-row" data-symbol="${escapeHtml(x.name)}" draggable="${!overviewSort.key}"><td class="overview-symbol-cell"><div class="overview-symbol-layout"><span class="overview-drag-handle" title="${overviewSort.key?"برای جابه‌جایی، مرتب‌سازی را غیرفعال کنید":"برای جابه‌جایی بکشید"}" aria-hidden="true">⋮⋮</span><button class="overview-symbol" type="button"><span class="overview-symbol-mark" aria-hidden="true"></span><span class="overview-symbol-name">${escapeHtml(x.name)}</span></button><button type="button" class="overview-delete-symbol" title="حذف نماد ${escapeHtml(x.name)}" aria-label="حذف نماد ${escapeHtml(x.name)}">×</button></div></td><td class="overview-price-cell"><input class="overview-price-input" type="text" inputmode="numeric" autocomplete="off" value="${x.price?formatThousands(x.price):""}" aria-label="قیمت پایانی ${escapeHtml(x.name)}" placeholder="قیمت را وارد کنید"></td><td class="overview-numeric">${dashboardNumber(x.totalShares)}</td><td class="overview-numeric">${dashboardValue(x.cost)}</td><td class="overview-numeric">${dashboardValue(x.value)}</td><td class="overview-numeric ${realizedProfitClass}">${dashboardSigned(x.realized)}</td></tr>`;
   }).join("");
   const totalCombined=d.profit;
   const profitClass=d.profit>0?"positive":d.profit<0?"negative":"";
