@@ -1047,3 +1047,36 @@ input:disabled,select:disabled,.trade-history-table td input:disabled{
   .closed-sale-summary-table th,.closed-sale-summary-table td{padding:7px 4px;font-size:10px}
   .closed-sale-summary-table th{line-height:1.35}
 }
+
+
+/* بستن واضحِ بخش فروش، بدون تازه‌سازی صفحه */
+.buy-sales-inline-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:4px;
+}
+.buy-sales-inline-head>strong{margin:0}
+.buy-sales-close{
+  flex:0 0 auto;
+  padding:5px 10px;
+  border:1px solid #d5e1ec;
+  border-radius:8px;
+  background:#fff;
+  color:#5f6f80;
+  font-size:11px;
+  font-weight:600;
+  line-height:1.5;
+}
+.buy-sales-close:hover{
+  border-color:#b9cde0;
+  background:#f1f6fa;
+  color:#315775;
+}
+.buy-sales-add{margin-top:8px}
+@media(max-width:520px){
+  .buy-sales-inline-head{align-items:flex-start}
+  .buy-sales-inline-head>strong{font-size:12px}
+  .buy-sales-close{padding:4px 8px}
+}
