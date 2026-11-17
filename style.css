@@ -786,3 +786,186 @@ body.privacy-mode #symbolList .symbol-tab-result{filter:blur(8px);user-select:no
   .trade-header-icon{flex-basis:24px;width:24px;height:24px;border-radius:7px}
   .trade-header-icon svg{width:14px;height:14px}
 }
+
+
+/* هماهنگ‌سازی رنگ‌ها: زمینه‌های آرام، آبی برای تعامل، سبز و قرمز برای نتیجه */
+:root{
+  --blue:#1769aa;
+  --blue2:#12558d;
+  --green:#16845b;
+  --red:#c43d45;
+  --ink:#243447;
+  --muted:#68788a;
+  --line:#dce5ee;
+  --bg:#f4f7fb;
+  --surface:#ffffff;
+  --blue-soft:#eaf2fa;
+  --blue-border:#cbdced;
+  --green-soft:#e9f7f0;
+  --red-soft:#fceeee;
+}
+body{
+  background:linear-gradient(180deg,#edf3f9 0,#f4f7fb 260px);
+  color:var(--ink);
+}
+body>header{
+  background:rgba(255,255,255,.94);
+  border-bottom-color:#dce5ee;
+  box-shadow:0 3px 14px rgba(35,58,82,.045);
+}
+.brand-mark{
+  background:linear-gradient(135deg,#1769aa,#4b91c5);
+  box-shadow:0 6px 18px rgba(23,105,170,.18);
+}
+button{
+  border-color:#ccd9e6;
+  background:#fff;
+  color:var(--ink);
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+button:hover{background:#f3f7fb;border-color:#b9cde0}
+button:focus-visible,.link-btn:focus-visible{
+  outline:3px solid rgba(23,105,170,.24);
+  outline-offset:2px;
+}
+.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.primary:hover{background:var(--blue2);border-color:var(--blue2);box-shadow:0 4px 12px rgba(23,105,170,.18)}
+.backup{color:#155b91;border-color:#c5dced;background:#edf5fb}
+.restore{color:#14734f;border-color:#c6e6d5;background:#eff8f3}
+.danger,.danger-text,.delete{color:var(--red)!important}
+.panel,.card,.modal-card{
+  border-color:var(--line);
+  background:rgba(255,255,255,.97);
+  box-shadow:0 5px 20px rgba(35,55,80,.045);
+}
+.card span,.settings-grid label,.closing-price-meta label{color:var(--muted)}
+.card strong{color:var(--ink)}
+.profit-card{background:linear-gradient(135deg,#fff,#f6f9fc)}
+.positive,.realized-gain.positive,.realized-profit-cell.positive{color:var(--green)!important}
+.negative,.realized-gain.negative,.realized-profit-cell.negative{color:var(--red)!important}
+input,select{
+  border-color:#cbd8e5;
+  background:#fff;
+  color:var(--ink);
+}
+input:focus,select:focus,.trade-history-table td input:focus{
+  border-color:#6b9fc9;
+  box-shadow:0 0 0 3px rgba(23,105,170,.12);
+}
+input:disabled,select:disabled,.trade-history-table td input:disabled{
+  background:#f0f3f6;
+  border-color:#e0e6ed;
+  color:#778493;
+}
+#symbolList .symbol-btn{
+  border-color:rgba(255,255,255,.92);
+  background:rgba(255,255,255,.62);
+  color:var(--ink);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.96),0 4px 14px rgba(48,76,105,.075);
+}
+#symbolList .symbol-btn:hover{
+  border-color:#cbdced;
+  background:rgba(255,255,255,.88);
+  box-shadow:inset 0 1px 0 #fff,0 7px 18px rgba(48,76,105,.11);
+}
+#symbolList .symbol-btn.active{
+  border-color:#a9c9e6;
+  background:linear-gradient(135deg,rgba(234,242,250,.98),rgba(213,230,246,.9));
+  color:#155b91;
+  box-shadow:inset 0 1px 0 #fff,0 5px 15px rgba(23,105,170,.12);
+}
+#symbolList .symbol-tab-result{color:#68788a}
+#symbolList .symbol-tab-result.positive{color:var(--green)!important}
+#symbolList .symbol-tab-result.negative{color:var(--red)!important}
+#symbolList .sidebar-head .icon-btn{
+  color:var(--blue);
+  border-color:#cbdced;
+  background:rgba(255,255,255,.8);
+}
+.trade-guide{
+  background:#eef5fb;
+  border-color:#d5e4f1;
+  color:#365a7c;
+}
+.trade-guide-note,.muted,.sale-allocation-status,.sell-fee-status{color:var(--muted)}
+.sell-fee-status.stale{color:#93620d}
+.sell-commission.stale{border-color:#d5b56d!important;background:#fff9e9!important}
+.trade-history-table{
+  border-spacing:0 5px;
+  color:var(--ink);
+}
+.trade-history-table thead th{
+  border:1px solid #cbdced;
+  border-radius:10px;
+  border-bottom-color:#c3d8eb;
+  background:linear-gradient(180deg,#f8fbfe 0%,#eaf2fa 100%);
+  color:#365a7c;
+  box-shadow:inset 0 1px 0 #fff,0 2px 4px rgba(45,75,105,.07);
+  text-shadow:none;
+}
+.trade-history-table thead th+th{border-inline-start:1px solid #cbdced}
+.trade-header-icon{
+  border-color:#d4e2ef;
+  background:linear-gradient(180deg,#fff,#f0f6fb);
+  color:#3477aa;
+  box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(45,75,105,.06);
+}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td{
+  border-color:#e3eaf1;
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:first-child{border-right-color:#e3eaf1}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:last-child{border-left-color:#e3eaf1}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header):hover>td{
+  background:#f3f7fb;
+  border-color:#d5e1ec;
+}
+#rows>tr.purchase-row-locked>td{
+  background:#f0f3f6!important;
+  border-color:#e2e8ef!important;
+}
+#rows>tr.purchase-row-editing>td{
+  background:#f0f6fc!important;
+  border-color:#cbdced!important;
+}
+#rows>tr.sale-tr>td{
+  background:#fff8f7;
+  border-color:#f0dedb;
+}
+#rows>tr.buy-sales-editor-row>td{background:transparent}
+.buy-sales-inline{
+  border-color:#dce5ee;
+  background:linear-gradient(180deg,#fbfdff,#f3f7fb);
+  box-shadow:inset 0 1px 0 #fff;
+}
+.buy-sales-inline>strong{color:#315775}
+.buy-sales-inline-status{color:#365a7c}
+.realized-profit-summary{color:var(--muted)}
+.realized-profit-cell{color:var(--ink)}
+.break-even-value{color:var(--green)}
+.allocation-btn,.purchase-edit-btn{
+  color:#1769aa;
+  border-color:#c5dced;
+  background:#f4f8fc;
+}
+.allocation-btn:hover,.purchase-edit-btn:hover{
+  background:#eaf2fa;
+  border-color:#a9c9e6;
+}
+.closed-purchases-toggle{
+  border-color:#d7e2ec;
+  background:linear-gradient(180deg,#fbfdff,#f1f6fa);
+  color:#49647f;
+}
+.closed-purchases-toggle:hover{background:#eaf2fa;border-color:#bfd2e5}
+.closed-purchases-chevron{color:#64819c}
+.table-empty,.table-empty-copy span{color:var(--muted)}
+.site-footer{
+  border-top-color:#dce5ee;
+  background:#f6f9fc;
+  color:#68788a;
+}
+.site-footer-github{border-color:#d4e1ed;background:#fff;color:#365a7c}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
