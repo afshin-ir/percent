@@ -622,3 +622,9 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 #symbolList .symbol-tab-result.negative{color:var(--red,#dc2626)!important}
 body.privacy-mode #symbolList .symbol-tab-result{filter:blur(8px);user-select:none}
 @media(max-width:600px){#symbolList .symbol-btn{flex-basis:170px;min-width:170px;min-height:62px;padding:9px 11px}}
+
+/* فاصلهٔ روشن میان سود هر خرید و دکمه‌های همان ردیف */
+.trade-history-table td.purchase-actions{min-width:250px;padding-inline:16px!important}
+.trade-history-table td.purchase-actions .delete{margin-inline:10px;padding-inline:9px}
+.trade-history-table td.realized-profit-cell{min-width:145px;padding-inline:18px!important;border-inline-start:1px solid #d8e2ed}
+#symbolList .sidebar-head .icon-btn{width:30px;height:30px;font-size:18px;border-radius:8px}
