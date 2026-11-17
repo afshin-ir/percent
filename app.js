@@ -266,7 +266,7 @@ function openCalendar(tr){calendarTarget=tr;const p=parseJ(tr.querySelector(".ja
 }$("#prevMonth").onclick=()=>{calendarCursor.m--;if(calendarCursor.m<1){calendarCursor.m=12;calendarCursor.y--}renderCalendar()};$("#nextMonth").onclick=()=>{calendarCursor.m++;if(calendarCursor.m>12){calendarCursor.m=1;calendarCursor.y++}renderCalendar()};$("#todayBtn").onclick=()=>{const t=currentJalali();calendarCursor={y:t.y,m:t.m};renderCalendar()};$("#closeCalendar").onclick=closeCalendar;$("#dateModal").onclick=e=>{if(e.target.id==="dateModal")closeCalendar()};$("#choiceModal").onclick=e=>{if(e.target.id==="choiceModal")closeChoice()};window.addEventListener("resize",drawChart);
 // Dashboard patch
 const OVERVIEW_STATE_KEY = "overview";
-let overviewMode = !Object.keys(app.symbols).length || !!app.ui?.overview;
+let overviewMode = false;
 const mainRoot = document.querySelector("main");
 const symbolViewSelectors = [".hero-row", ".cards", ".settings", ".chart-panel", "main > .panel"];
 
@@ -610,12 +610,7 @@ function renderSymbolView(){
 }
 function renderSymbolsDashboardAware(){
   const el=$("#symbolList");el.innerHTML="";
-  const heading=document.createElement("div");heading.className="sidebar-head";heading.innerHTML="<h2>نمادها</h2>";el.appendChild(heading);
-  const overview=document.createElement("button");
-  overview.className="symbol-btn overview-btn"+(overviewMode?" active":"");
-  overview.innerHTML='<span class="overview-icon">▦</span><span class="symbol-name">نمای کلی</span>';
-  overview.onclick=()=>{overviewMode=true;app.ui=app.ui||{};app.ui.overview=true;renderSymbolsDashboardAware();render();saveApp()};
-  el.appendChild(overview);
+  const heading=document.createElement("div");heading.className="sidebar-head";heading.innerHTML="<h2>نمادها</h2><button id='addSymbolFromList' type='button' class='icon-btn' title='نماد جدید' aria-label='افزودن نماد'>＋</button>";el.appendChild(heading);heading.querySelector("#addSymbolFromList").onclick=addNewSymbol;
   (app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{
     const s=app.symbols[name];if(!s)return;
     const b=document.createElement("button");b.className="symbol-btn"+(!overviewMode&&name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;
@@ -625,13 +620,13 @@ function renderSymbolsDashboardAware(){
   });
 }
 function saveAppDashboardAware(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;app.ui.overview=overviewMode;localStorage.setItem(KEY,JSON.stringify(app))}
-function renderDashboardAware(){if(overviewMode){renderOverview();return}renderSymbolView()}
+function renderDashboardAware(){renderSymbolView()}
 // Replace the view/render entry points while preserving the existing symbol-page implementation.
 renderSymbols=renderSymbolsDashboardAware;
 saveApp=saveAppDashboardAware;
 render=renderDashboardAware;
 renderSymbols();render();saveApp();
-$("#backToOverviewBtn").onclick=()=>{overviewMode=true;app.ui=app.ui||{};app.ui.overview=true;renderSymbols();render();saveApp()};
+
 
 // Sales are recorded separately; existing purchase records remain intact.
 function applyTradeFilter(){
