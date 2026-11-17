@@ -595,10 +595,10 @@ body>header,body>header:hover,body>header:focus-within{position:static!important
 .overview-symbol-cell{width:50%;min-width:0;max-width:none}
 .overview-table td.overview-symbol-cell{width:50%}
 
-/* Layout for the symbol list and active symbol page */
-.app-shell{display:grid!important;grid-template-columns:245px minmax(0,1fr);gap:18px;direction:ltr;max-width:1550px;margin:24px auto;padding:0 18px}
-.app-shell>*{direction:rtl}
-.app-shell>main{width:auto}
-#symbolList.sidebar{display:flex!important}
-@media(max-width:1050px){.app-shell{grid-template-columns:1fr;direction:rtl}.sidebar{position:static;order:-1}.symbol-list{flex-direction:row;overflow:auto}.symbol-btn{width:auto;min-width:120px}}
+/* فهرست همهٔ نمادها بالای جدول معاملات و بدون پنهان‌شدن در اسکرول افقی */
+.app-shell{display:block!important;direction:rtl;width:100%;max-width:1550px;margin:24px auto;padding:0 18px}
+.app-shell>main{width:100%;min-width:0}
+#symbolList.sidebar{display:flex!important;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;overflow:visible;padding:10px 12px;margin:0 0 14px;position:static;height:auto}
+#symbolList .sidebar-head{flex:0 0 auto;border:0;padding:4px 8px}
+#symbolList .symbol-btn{flex:0 0 auto;width:auto;min-width:120px}
 @media(max-width:600px){.app-shell{margin-top:14px!important;padding:0 10px}}
