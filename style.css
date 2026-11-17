@@ -628,3 +628,9 @@ body.privacy-mode #symbolList .symbol-tab-result{filter:blur(8px);user-select:no
 .trade-history-table td.purchase-actions .delete{margin-inline:10px;padding-inline:9px}
 .trade-history-table td.realized-profit-cell{min-width:145px;padding-inline:18px!important;border-inline-start:1px solid #d8e2ed}
 #symbolList .sidebar-head .icon-btn{width:30px;height:30px;font-size:18px;border-radius:8px}
+
+/* خریدهای تکمیل‌شده در گروهی جمع‌شونده، پایین جدول */
+.trade-history-table .purchase-group-header td{padding:8px 12px!important;background:#f4f8fc;border-bottom:1px solid #dce6f0}
+.closed-purchases-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:1px solid #d8e4f0;border-radius:9px;background:linear-gradient(180deg,#f8fbfe,#eef4fa);color:#49647f;font:inherit;font-size:12px;font-weight:700;text-align:right;cursor:pointer}
+.closed-purchases-toggle:hover{background:#eaf3fc;border-color:#bfd3e8}
+.closed-purchases-chevron{font-size:17px;color:#6c8298}
