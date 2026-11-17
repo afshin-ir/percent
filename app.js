@@ -13,7 +13,7 @@ function makeSymbol(rows=[],price=0,fee=.12){return{price,fee,sales:[],priceHist
 function loadApp(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v)return normalizeApp(v);for(const k of LEGACY_KEYS){const old=JSON.parse(localStorage.getItem(k)||"null");if(old)return normalizeApp(old)}}catch{}return normalizeApp(null)}function saveApp(){app.activeSymbol=activeSymbol;app.ui=app.ui||{};app.ui.chartSymbol=activeSymbol;localStorage.setItem(KEY,JSON.stringify(app))}function active(){return app.symbols[activeSymbol]}function sortRows(){active().rows.sort((a,b)=>{const ad=parseJ(a.date),bd=parseJ(b.date);if(!ad&&!bd)return 0;if(!ad)return -1;if(!bd)return 1;return bd.date-ad.date})}
 function renderSymbols(){const el=$("#symbolList");el.innerHTML="";(app.symbolOrder||Object.keys(app.symbols)).forEach(name=>{if(!app.symbols[name])return;const b=document.createElement("button");b.className="symbol-btn"+(name===activeSymbol?" active":"");b.draggable=true;b.dataset.symbol=name;
     b.innerHTML=`<span class="drag-handle">⋮⋮</span><span class="symbol-name">${escapeHtml(name)}</span>`;b.onclick=()=>switchSymbol(name);b.ondragstart=e=>{e.dataTransfer.setData("text/plain",name);b.classList.add("dragging")};b.ondragend=()=>b.classList.remove("dragging");b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();const from=e.dataTransfer.getData("text/plain"),to=name;if(!from||from===to)return;const order=app.symbolOrder.slice(),fi=order.indexOf(from),ti=order.indexOf(to);order.splice(fi,1);order.splice(ti,0,from);app.symbolOrder=order;renderSymbols();saveApp()};el.appendChild(b)})}function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function switchSymbol(name){activeSymbol=name;sortRows();updatePurchasesTitle();renderSymbols();render();saveApp()}
-let openBuySalesRowId=null;
+let openBuySalesRowId=null,closedPurchaseGroupExpanded=false;
 function closeBuySalesEditor(){rowsEl.querySelector('.buy-sales-editor-row')?.remove();openBuySalesRowId=null}
 function toggleBuySalesEditor(buyRow){
  const buyId=buyRow.dataset.id;
@@ -91,7 +91,7 @@ function setDataFieldTabOrder(){
   fields.forEach(el=>{el.tabIndex=0});
 }
 
-function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row)")].map(tr=>{const old=active().rows.find(r=>r.id===tr.dataset.id)||{};return{id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value),sellCommission:num(tr.querySelector(".sell-commission").value)}});sortRows()}
+function syncRows(){active().rows=[...rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row):not(.purchase-group-header)")].map(tr=>{const old=active().rows.find(r=>r.id===tr.dataset.id)||{};return{id:tr.dataset.id,date:faToEn(tr.querySelector(".jalali").value),shares:num(tr.querySelector(".shares").value),price:num(tr.querySelector(".price").value),commission:num(tr.querySelector(".commission").value),sellCommission:num(tr.querySelector(".sell-commission").value)}});sortRows()}
 
 function buySalesSummary(symbol,buyId,allocation=allocationLedger(symbol)){
  let shares=0,gross=0,commission=0;
@@ -104,9 +104,53 @@ function buySalesSummary(symbol,buyId,allocation=allocationLedger(symbol)){
  }
  return{shares,gross,averagePrice:shares?gross/shares:null,commission};
 }
+function renderPurchaseGroups(){
+ const header=rowsEl.querySelector(".purchase-group-header");
+ const entries=[...rowsEl.children].filter(row=>!row.classList.contains("purchase-group-header"));
+ const purchases=entries.filter(row=>!row.classList.contains("sale-tr")&&!row.classList.contains("buy-sales-editor-row"));
+ const open=purchases.filter(row=>!row.classList.contains("purchase-row-fully-sold"));
+ const closed=purchases.filter(row=>row.classList.contains("purchase-row-fully-sold"));
+ if(!closed.length){header?.remove();closedPurchaseGroupExpanded=false}
+ let groupHeader=header;
+ if(closed.length){
+  if(!groupHeader){
+   groupHeader=document.createElement("tr");groupHeader.className="purchase-group-header";
+   const cell=document.createElement("td");cell.colSpan=7;
+   const button=document.createElement("button");button.type="button";button.className="closed-purchases-toggle";
+   button.setAttribute("aria-expanded","false");
+   button.innerHTML='<span class="closed-purchases-label"></span><span class="closed-purchases-chevron" aria-hidden="true"></span>';
+   button.onclick=()=>{closedPurchaseGroupExpanded=!closedPurchaseGroupExpanded;renderPurchaseGroups()};
+   cell.appendChild(button);groupHeader.appendChild(cell);
+  }
+  if(openBuySalesRowId&&closed.some(row=>row.dataset.id===openBuySalesRowId))closedPurchaseGroupExpanded=true;
+  groupHeader.querySelector(".closed-purchases-label").textContent="خریدهای کاملاً فروخته‌شده ("+fmt(closed.length)+")";
+  groupHeader.querySelector(".closed-purchases-chevron").textContent=closedPurchaseGroupExpanded?"⌄":"‹";
+  groupHeader.querySelector(".closed-purchases-toggle").setAttribute("aria-expanded",String(closedPurchaseGroupExpanded));
+ }
+ const relatedByBuy=new Map();
+ entries.filter(row=>row.classList.contains("sale-tr")||row.classList.contains("buy-sales-editor-row")).forEach(row=>{
+  const id=row.dataset.buyId||row.dataset.sourceBuyId;
+  if(!id)return;
+  if(!relatedByBuy.has(id))relatedByBuy.set(id,[]);
+  relatedByBuy.get(id).push(row);
+ });
+ const ordered=[];
+ const addGroup=list=>list.forEach(row=>{ordered.push(row,...(relatedByBuy.get(row.dataset.id)||[]))});
+ addGroup(open);
+ if(groupHeader&&closed.length)ordered.push(groupHeader);
+ addGroup(closed);
+ entries.filter(row=>!ordered.includes(row)).forEach(row=>ordered.push(row));
+ if(ordered.length!==rowsEl.children.length||ordered.some((row,index)=>rowsEl.children[index]!==row))ordered.forEach(row=>rowsEl.appendChild(row));
+ const filterChoice=document.querySelector("#tradeFilter")?.value||"all";
+ open.forEach(row=>{row.style.display=filterChoice==="sell"?"none":"";(relatedByBuy.get(row.dataset.id)||[]).forEach(detail=>detail.style.display=filterChoice==="sell"?"none":"")});
+ if(closed.length)closed.forEach(row=>{
+  row.style.display=closedPurchaseGroupExpanded&&filterChoice!=="sell"?"":"none";
+  (relatedByBuy.get(row.dataset.id)||[]).forEach(detail=>detail.style.display=closedPurchaseGroupExpanded&&filterChoice!=="sell"?"":"none");
+ });
+}
 function updateTableOnly(){
  const s=active(),allocation=allocationLedger(s);let ts=0,tc=0;
- rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row)").forEach(tr=>{
+ rowsEl.querySelectorAll("tr:not(.sale-tr):not(.buy-sales-editor-row):not(.purchase-group-header)").forEach(tr=>{
   const sh=num(tr.querySelector(".shares").value),p=num(tr.querySelector(".price").value),buyFeeInput=tr.querySelector(".commission"),sellFeeInput=tr.querySelector(".sell-commission"),buyFeeKnown=!!buyFeeInput.value.trim(),c=num(buyFeeInput.value),cost=sh*p+c,row=s.rows.find(r=>r.id===tr.dataset.id),state=allocation.byBuy[row?.id]||{unitCost:sh?(cost/sh):0,soldShares:0,realizedGain:0,realizedBasis:0};
   const remainingInfo=row?buyRemainingState(s,row,allocation):{remaining:sh,known:false},remaining=remainingInfo.remaining,remainingKnown=remainingInfo.known;
   const costCell=tr.querySelector(".cost");if(costCell)costCell.textContent=sh>0&&p>0&&buyFeeKnown?fmt(cost):"—";
@@ -115,14 +159,14 @@ function updateTableOnly(){
   const fullySold=remainingKnown&&sh>0&&remaining===0&&state.soldShares>=sh,editing=tr.dataset.purchaseEditMode==="true",locked=fullySold&&!editing;
   const gain=state.soldShares>0?state.realizedGain:null,amount=tr.querySelector(".realized-gain");
   if(amount){amount.textContent=gain===null?"—":(gain>0?"+":"")+fmt(gain);amount.classList.toggle("positive",gain>0);amount.classList.toggle("negative",gain<0)}
-  tr.classList.toggle("purchase-row-locked",locked);tr.classList.toggle("purchase-row-editing",editing);
+  tr.classList.toggle("purchase-row-locked",locked);tr.classList.toggle("purchase-row-editing",editing);tr.classList.toggle("purchase-row-fully-sold",fullySold);
   [".jalali",".shares",".price",".commission",".sell-commission"].forEach(selector=>{const input=tr.querySelector(selector);if(!input)return;input.disabled=locked;input.title=locked?"این خرید کامل فروخته شده است؛ برای اصلاح، «اصلاح خرید» را بزن.":""});
   const editButton=tr.querySelector(".purchase-edit-btn");if(editButton){editButton.hidden=!fullySold&&!editing;editButton.textContent=editing?"پایان اصلاح":"اصلاح خرید";editButton.title=editing?"پایان اصلاح اطلاعات خرید":"بازکردن فیلدهای این خرید برای اصلاح"}
   updateBuySalesButton(tr);const saleEditor=rowsEl.querySelector('.buy-sales-editor-row[data-buy-id="'+(row?.id||"")+'"]'),addSaleButton=saleEditor?.querySelector(".buy-sales-add"),noRemaining=remainingKnown&&sh>0&&remaining===0;if(addSaleButton){addSaleButton.disabled=noRemaining;addSaleButton.textContent=noRemaining?"تمام سهم‌ها فروخته شده":"＋ افزودن فروش"}ts+=sh;tc+=cost
  });
  const realizedTotal=Object.values(allocation.bySale||{}).reduce((sum,sale)=>sum+(Number(sale.gain)||0),0),realizedTotalEl=$("#realizedProfitTotal");
  if(realizedTotalEl){realizedTotalEl.textContent=fmt(realizedTotal);realizedTotalEl.classList.toggle("positive",realizedTotal>0);realizedTotalEl.classList.toggle("negative",realizedTotal<0)}
- $("#currentPriceCard2").textContent=Number(s.price)?fmt(s.price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&Number(s.price)?(ts*Number(s.price)/tc)-1:null,tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=s.rows.length?"none":"block";drawChart()
+ $("#currentPriceCard2").textContent=Number(s.price)?fmt(s.price):"—";$("#totalShares").textContent=fmt(ts);$("#totalCost").textContent=fmt(tc);const totalProfit=tc&&Number(s.price)?(ts*Number(s.price)/tc)-1:null,tp=$("#totalProfit");tp.textContent=totalProfit===null?"—":fmtPct(totalProfit);tp.classList.toggle("positive",totalProfit>0);tp.classList.toggle("negative",totalProfit<0);$("#tableEmpty").style.display=s.rows.length?"none":"block";drawChart();renderPurchaseGroups()
 }
 function render(){sortRows();updatePurchasesTitle();const s=active();$("#activeSymbolTitle").textContent=activeSymbol;priceEl.value=s.price?formatThousands(s.price):"";rowsEl.innerHTML="";s.rows.forEach(r=>addRow(r));$("#tableEmpty").style.display=s.rows.length?"none":"block";updateTableOnly();$("#lastUpdated").textContent=`امروز: ${enToFa(String(currentJalali().y))}/${enToFa(String(currentJalali().m).padStart(2,"0"))}/${enToFa(String(currentJalali().d).padStart(2,"0"))}`;drawChart();setDataFieldTabOrder()}
 priceEl.oninput=()=>{active().price=num(priceEl.value);updateTableOnly();saveApp()};priceEl.onblur=()=>{priceEl.value=formatThousands(priceEl.value);active().price=num(priceEl.value);recordPriceSnapshot();render();saveApp()};$("#addBtn").onclick=()=>{active().rows.unshift({id:id(),date:"",shares:0,price:0,commission:0});render();saveApp();setTimeout(()=>rowsEl.querySelector(".date-input")?.click(),0)};$("#emptyAddBtn").onclick=()=>$("#addBtn").click();
@@ -590,6 +634,7 @@ function renderOverview(){const symbolNav=document.querySelector("#symbolList");
 }
 function renderSymbolView(){
   const el=document.querySelector("#overviewView"); if(el)el.style.display="none";
+  closedPurchaseGroupExpanded=false;
   const symbolNav=document.querySelector("#symbolList");if(symbolNav)symbolNav.style.display="flex";
   symbolViewSelectors.forEach(sel=>document.querySelectorAll(sel).forEach(node=>node.style.display=""));
   sortRows();
@@ -649,7 +694,7 @@ renderSymbols();render();saveApp();
 // Sales are recorded separately; existing purchase records remain intact.
 function applyTradeFilter(){
  const choice=document.querySelector('#tradeFilter')?.value||'all';
- const trs=[...rowsEl.querySelectorAll('tr')];
+ const trs=[...rowsEl.querySelectorAll('tr:not(.purchase-group-header)')];
  let visible=0;
  trs.forEach(tr=>{const sell=tr.classList.contains('sale-tr');const show=choice==='all'||(choice==='sell'?sell:!sell);tr.style.display=show?'':'none';if(show)visible++});
  const empty=$('#tableEmpty');
@@ -675,7 +720,7 @@ function saleRow(sale,buyId=sale.sourceBuyId){
  if(shared){for(const input of [date,shares,price,fee])input.disabled=true;del.disabled=true;del.title="این فروش بین چند خرید تقسیم شده است؛ اطلاعات آن در این ردیف ویرایش نمی‌شود."}
  const inputHandler=()=>{if(!syncSaleRow(tr,false))return;updateSaleRowDisplay(tr);updateTableOnly()};
  for(const input of [shares,price,fee]){input.oninput=inputHandler;input.onblur=()=>{if(!syncSaleRow(tr,true))return;input.value=formatThousands(input.value);updateSaleRowDisplay(tr);updateTableOnly();renderSymbols();saveApp()}}
- del.onclick=()=>{if(shared||!confirm("این فروش از این خرید حذف شود؟"))return;const tbody=tr.parentElement;active().sales=active().sales.filter(x=>x.id!==sale.id);tr.remove();if(tbody&&!tbody.querySelector(".inline-sale-tr")){const empty=tbody.closest(".buy-sales-inline")?.querySelector(".buy-sales-inline-empty");if(empty)empty.hidden=false}const buy=rowsEl.querySelector('tr:not(.sale-tr):not(.buy-sales-editor-row)[data-id="'+buyId+'"]');if(buy)updateBuySalesButton(buy);updateTableOnly();renderSymbols();saveApp()};
+ del.onclick=()=>{if(shared||!confirm("این فروش از این خرید حذف شود؟"))return;const tbody=tr.parentElement;active().sales=active().sales.filter(x=>x.id!==sale.id);tr.remove();if(tbody&&!tbody.querySelector(".inline-sale-tr")){const empty=tbody.closest(".buy-sales-inline")?.querySelector(".buy-sales-inline-empty");if(empty)empty.hidden=false}const buy=rowsEl.querySelector('tr:not(.sale-tr):not(.buy-sales-editor-row):not(.purchase-group-header)[data-id="'+buyId+'"]');if(buy)updateBuySalesButton(buy);updateTableOnly();renderSymbols();saveApp()};
  updateSaleRowDisplay(tr);return tr;
 }
 function syncSaleRow(tr,validate=true){
@@ -705,7 +750,7 @@ function updateSaleRowDisplay(tr){
 function renderCombinedTrades(){
  const symbol=active(),body=rowsEl;
  body.querySelectorAll('tr.sale-tr:not(.inline-sale-tr)').forEach(x=>x.remove());
- body.querySelectorAll('tr:not(.sale-tr):not(.buy-sales-editor-row)').forEach(updateBuySalesButton);
+ body.querySelectorAll('tr:not(.sale-tr):not(.buy-sales-editor-row):not(.purchase-group-header)').forEach(updateBuySalesButton);
  updatePurchasesTitle();
  const empty=$('#tableEmpty');
  if(empty){empty.style.display=symbol.rows.length?'none':'block';if(!symbol.rows.length)empty.textContent='برای شروع، نخستین خرید را ثبت کن؛ سپس تعداد سهم و قیمت هر سهم را وارد کن.'}
