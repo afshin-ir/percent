@@ -105,6 +105,7 @@ function buySalesSummary(symbol,buyId,allocation=allocationLedger(symbol)){
  return{shares,gross,averagePrice:shares?gross/shares:null,commission};
 }
 function renderPurchaseGroups(){
+ const filterChoice=document.querySelector("#tradeFilter")?.value||"all";
  const header=rowsEl.querySelector(".purchase-group-header");
  const entries=[...rowsEl.children].filter(row=>!row.classList.contains("purchase-group-header"));
  const purchases=entries.filter(row=>!row.classList.contains("sale-tr")&&!row.classList.contains("buy-sales-editor-row"));
@@ -126,6 +127,7 @@ function renderPurchaseGroups(){
   groupHeader.querySelector(".closed-purchases-label").textContent="خریدهای کاملاً فروخته‌شده ("+fmt(closed.length)+")";
   groupHeader.querySelector(".closed-purchases-chevron").textContent=closedPurchaseGroupExpanded?"⌄":"‹";
   groupHeader.querySelector(".closed-purchases-toggle").setAttribute("aria-expanded",String(closedPurchaseGroupExpanded));
+  groupHeader.style.display=filterChoice==="sell"?"none":"";
  }
  const relatedByBuy=new Map();
  entries.filter(row=>row.classList.contains("sale-tr")||row.classList.contains("buy-sales-editor-row")).forEach(row=>{
@@ -141,7 +143,6 @@ function renderPurchaseGroups(){
  addGroup(closed);
  entries.filter(row=>!ordered.includes(row)).forEach(row=>ordered.push(row));
  if(ordered.length!==rowsEl.children.length||ordered.some((row,index)=>rowsEl.children[index]!==row))ordered.forEach(row=>rowsEl.appendChild(row));
- const filterChoice=document.querySelector("#tradeFilter")?.value||"all";
  open.forEach(row=>{row.style.display=filterChoice==="sell"?"none":"";(relatedByBuy.get(row.dataset.id)||[]).forEach(detail=>detail.style.display=filterChoice==="sell"?"none":"")});
  if(closed.length)closed.forEach(row=>{
   row.style.display=closedPurchaseGroupExpanded&&filterChoice!=="sell"?"":"none";
@@ -697,6 +698,7 @@ function applyTradeFilter(){
  const trs=[...rowsEl.querySelectorAll('tr:not(.purchase-group-header)')];
  let visible=0;
  trs.forEach(tr=>{const sell=tr.classList.contains('sale-tr');const show=choice==='all'||(choice==='sell'?sell:!sell);tr.style.display=show?'':'none';if(show)visible++});
+ renderPurchaseGroups();
  const empty=$('#tableEmpty');
  if(empty){empty.style.display=visible?'none':'block';empty.textContent=choice==='sell'?'فروشی برای نمایش وجود ندارد.':choice==='buy'?'خریدی برای نمایش وجود ندارد.':'هنوز معامله‌ای ثبت نشده است.';}
 }
