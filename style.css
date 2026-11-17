@@ -634,3 +634,98 @@ body.privacy-mode #symbolList .symbol-tab-result{filter:blur(8px);user-select:no
 .closed-purchases-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:1px solid #d8e4f0;border-radius:9px;background:linear-gradient(180deg,#f8fbfe,#eef4fa);color:#49647f;font:inherit;font-size:12px;font-weight:700;text-align:right;cursor:pointer}
 .closed-purchases-toggle:hover{background:#eaf3fc;border-color:#bfd3e8}
 .closed-purchases-chevron{font-size:17px;color:#6c8298}
+
+/* پرداخت بصری تازه برای جدول معاملات */
+.trade-history-table{
+  border-collapse:separate;
+  border-spacing:0 5px;
+  background:transparent;
+}
+.trade-history-table thead th{
+  position:relative;
+  padding:12px 10px;
+  border:0;
+  border-bottom:1px solid #bfd2e5;
+  background:linear-gradient(180deg,#376f9f 0%,#285f8f 100%);
+  color:#fff;
+  font-size:11px;
+  letter-spacing:.01em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+.trade-history-table thead th:first-child{border-radius:0 10px 10px 0}
+.trade-history-table thead th:last-child{border-radius:10px 0 0 10px}
+.trade-history-table thead th+th{border-inline-start:1px solid rgba(255,255,255,.13)}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td{
+  padding:10px 9px;
+  border-top:1px solid #e3ebf3;
+  border-bottom:1px solid #e3ebf3;
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+  transition:background-color .15s ease,border-color .15s ease;
+}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:first-child{
+  border-right:1px solid #e3ebf3;
+  border-radius:0 10px 10px 0;
+}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td:last-child{
+  border-left:1px solid #e3ebf3;
+  border-radius:10px 0 0 10px;
+}
+#rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header):hover>td{
+  background:#f3f8fe;
+  border-color:#d2e2f2;
+}
+#rows>tr.purchase-row-locked>td{background:#f2f5f8!important;border-color:#e2e8ef!important}
+#rows>tr.purchase-row-editing>td{background:#f1f7ff!important;border-color:#cfe0f3!important}
+#rows>tr.sale-tr>td{background:#fff8f6;border-color:#f3ded8}
+.trade-history-table td input:not([type="checkbox"]){
+  min-height:36px;
+  border:1px solid #d4deea;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:inset 0 1px 2px rgba(22,50,80,.035);
+  transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+}
+.trade-history-table td input:focus{
+  border-color:#4d91cb;
+  outline:0;
+  box-shadow:0 0 0 3px rgba(42,119,183,.12);
+}
+.trade-history-table td input:disabled{background:#eef2f6;border-color:#e0e6ed;box-shadow:none}
+.trade-history-table .break-even-value{font-size:11px}
+.trade-history-table .realized-profit-cell{font-size:13px;font-weight:700}
+.trade-history-table .realized-gain{display:inline-block;min-width:92px;font-size:14px;font-weight:800;letter-spacing:.01em}
+.trade-history-table .purchase-actions .allocation-btn{
+  padding:6px 9px;
+  border-color:#c6d9ed;
+  border-radius:8px;
+  background:linear-gradient(180deg,#fff,#f3f8fd);
+  box-shadow:0 1px 2px rgba(30,70,110,.05);
+  transition:background .15s ease,border-color .15s ease,transform .15s ease;
+}
+.trade-history-table .purchase-actions .allocation-btn:hover{background:#eaf4ff;border-color:#a8c7e6;transform:translateY(-1px)}
+.trade-history-table .purchase-actions .delete{
+  width:30px;height:30px;padding:0;
+  border-radius:8px;
+  color:#b54747;
+  transition:background .15s ease,color .15s ease;
+}
+.trade-history-table .purchase-actions .delete:hover{background:#fff0ee;color:#b42318}
+#rows>tr.buy-sales-editor-row>td{padding:12px 14px!important;border:0;background:transparent}
+.buy-sales-inline{
+  padding:14px;
+  border:1px solid #dce7f1;
+  border-radius:12px;
+  background:linear-gradient(180deg,#f9fbfe,#f2f7fc);
+  box-shadow:inset 0 1px 0 #fff;
+}
+.buy-sales-inline>strong{display:block;color:#294e70;font-size:13px}
+.buy-sales-inline>p.muted{margin:5px 0 12px;font-size:11px}
+.buy-sales-inline-table{border-radius:9px;overflow:hidden}
+.trade-history-table .purchase-group-header td{padding:8px 0!important;border:0;background:transparent}
+@media(max-width:700px){
+  .trade-history-table{border-spacing:0 4px}
+  .trade-history-table thead th{padding:10px 7px;font-size:10px}
+  #rows>tr:not(.buy-sales-editor-row):not(.purchase-group-header)>td{padding:8px 6px}
+  .trade-history-table .realized-gain{min-width:78px;font-size:13px}
+  .buy-sales-inline{padding:10px}
+}
